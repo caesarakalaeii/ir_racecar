@@ -17,7 +17,7 @@ The serial and tkinter modules
 ### Usage  
 To run the script, use the following command:  
 ```
-python script.py  
+python toSerialApp.py  
 ```
 The script will open the GUI, which will look like this:  
 
