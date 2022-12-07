@@ -7,7 +7,7 @@ The code above sets the PWM frequency and duty cycle on an Arduino board. The co
 
 In the setup function, the code sets the PWM and interrupt pin as output, sets the initial PWM frequency, and enables the interrupt for the interrupt pin. In the loop function, the code checks if the PWM is active and sets the PWM value to the value of pwmDuty if it is. The code also checks for serial input and updates the PWM frequency or duty cycle accordingly.
 
-## toSerial.py  
+## toSerialApp.py  
 ### Introduction  
 This script allows the user to control the PWM frequency and duty cycle on an Arduino board using a simple GUI. The user can input the PWM frequency and duty cycle values in the GUI and then click the submit button to send the values over the serial port to the Arduino board. The Arduino board will then update the PWM frequency and duty cycle accordingly.  
 
