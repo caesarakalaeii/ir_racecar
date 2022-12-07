@@ -26,12 +26,23 @@ The script will open the GUI, which will look like this:
 The user can input the PWM frequency and duty cycle values in the input fields and then click the submit button to send the values to the Arduino board. The Arduino board will then update the PWM frequency and duty cycle accordingly.  
 
 ### Configuration  
-The script uses the serial module to communicate with the Arduino board over the serial port. The serial port and baud rate may need to be adjusted depending on the specific configuration of the Arduino board. The default values are '/dev/ttyACM0' for the serial port and 9600 for the baud rate. These values can be modified in the following lines of the script:  
-
+The script uses the serial module to communicate with the Arduino board over the serial port. The serial port and baud rate may need to be adjusted depending on the specific configuration of the Arduino board. The default values are '/dev/ttyACM0' for the serial port and 9600 for the baud rate. These values can be modified in the following line of the script:  
 
 ```
 ser = serial.Serial('/dev/ttyACM0', 9600)
 ```
 Additionally, the code that handles the serial input on the Arduino side needs to be modified to handle the encoded values as described in the previous answer.
+
+# TODOs:  
+
+❌ Upload CAD files for the PCBs
+❌ Upload CAD files for the Camera and LED fixture
+❌ Write Documentation for the used ICs
+❌ Upload the openCV test scripts
+❌ Declutter openCV test scripts
+❌ Link documentation for the used Filter
+❌ Link documentation for used ICs
+❌ Link documentation for used camera
+❌ Use openCV output and odometrie to generate a ROS map
 
 <sup> Parts of this Repository were generatet using ChatGPT</sup>
