@@ -35,14 +35,14 @@ Additionally, the code that handles the serial input on the Arduino side needs t
 
 # TODOs:  
 
-❌ Upload CAD files for the PCBs
-❌ Upload CAD files for the Camera and LED fixture
-❌ Write Documentation for the used ICs
-❌ Upload the openCV test scripts
-❌ Declutter openCV test scripts
-❌ Link documentation for the used Filter
-❌ Link documentation for used ICs
-❌ Link documentation for used camera
-❌ Use openCV output and odometrie to generate a ROS map
+❌ Upload CAD files for the PCBs   
+❌ Upload CAD files for the Camera and LED fixture  
+❌ Write Documentation for the used ICs  
+❌ Upload the openCV test scripts  
+❌ Declutter openCV test scripts  
+❌ Link documentation for the used Filter  
+❌ Link documentation for used ICs  
+❌ Link documentation for used camera  
+❌ Use openCV output and odometrie to generate a ROS map  
 
 <sup> Parts of this Repository were generatet using ChatGPT</sup>
