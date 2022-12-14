@@ -2,7 +2,7 @@
 This repository is for a lane detection system using infrared lights, multiple approaches will be explored
 
 
-## pwm_Gen_frame_sync:  
+## pwm_Gen.ino:  
 The code above sets the PWM frequency and duty cycle on an Arduino board. The code sets the frequency and duty cycle using the setPwmFrequency and setPwmDutyCycle functions, respectively. The PWM frequency and duty cycle can be changed by sending an input over the serial port using the Arduino's Serial.parseInt() function. The input is a 32-bit number where the first two bits indicate the type of input (frequency or duty cycle) and the remaining 30 bits contain the value of the input.
 
 In the setup function, the code sets the PWM and interrupt pin as output, sets the initial PWM frequency, and enables the interrupt for the interrupt pin. In the loop function, the code checks if the PWM is active and sets the PWM value to the value of pwmDuty if it is. The code also checks for serial input and updates the PWM frequency or duty cycle accordingly.
@@ -33,12 +33,55 @@ ser = serial.Serial('/dev/ttyACM0', 9600)
 ```
 Additionally, the code that handles the serial input on the Arduino side needs to be modified to handle the encoded values as described in the previous answer.
 
+As aan alternative Version toSerial.py is provided, to grant a easier use in cli enviroments.
+
+
+#imageDiff.py
+
+This script uses the cv2 module (part of the OpenCV computer vision library) to compare two images and generate a series of images showing the differences between the two.
+Dependencies
+
+    OpenCV
+    NumPy
+
+###Usage
+
+To use the script, you need to provide the paths to the two images you want to compare as arguments to the cv2.imread() function. The script will then generate a series of images showing the differences between the two images with increasing thresholds for the difference values. The resulting images will be saved to the specified output directory with filenames that include the threshold value used for each image.
+
+
+#showCam.py
+
+This script contains functions to display a video feed from a webcam, show the difference between two frames, and transform the video feed.
+##Dependencies
+
+    cv2
+    numpy
+    asyncio
+
+##Functions
+###showCam(cam)
+
+This function takes in a video capture object cam and displays the video feed in a window named "test". The function also converts the frame to grayscale and improves the contrast using histogram equalization. The processed frame is then returned.
+###showDiff(frame, oldFrame)
+
+This function takes in two frames, frame and oldFrame, and displays the difference between the two frames in a window named "diff". If an error is encountered, the original frame is returned.
+###showTransDiff(frame, oldFrame)
+
+This function is similar to showDiff, but it also transforms the frame before displaying the difference. If an error is encountered, the original frame is returned.
+This function is currently disabled
+###showTrans(frame,oldDst)
+
+This function takes in a frame frame and an old frame oldDst, and performs a perspective transform on frame to correct for lens distortion. The transformed frame is then displayed in a window named "transformed", and the difference between the transformed frame and oldDst is displayed in a window named "diff". The transformed frame is returned.
+###main()
+
+This is the main function of the script, which initializes a video capture object and displays the video feed using the functions defined above. The loop continues until the user hits the 'esc' key.
+
 # TODOs:  
 
-❌ Upload CAD files for the PCBs   
+✅ Upload CAD files for the PCBs   
 ❌ Upload CAD files for the Camera and LED fixture  
 ❌ Write Documentation for the used ICs  
-❌ Upload the openCV test scripts  
+✅ Upload the openCV test scripts  
 ❌ Declutter openCV test scripts  
 ❌ Link documentation for the used Filter  
 ❌ Link documentation for used ICs  
