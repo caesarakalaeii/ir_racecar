@@ -33,10 +33,10 @@ ser = serial.Serial('/dev/ttyACM0', 9600)
 ```
 Additionally, the code that handles the serial input on the Arduino side needs to be modified to handle the encoded values as described in the previous answer.
 
-As aan alternative Version toSerial.py is provided, to grant a easier use in cli enviroments.
+As an alternative Version toSerial.py is provided, to grant a easier use in cli enviroments.
 
 
-#imageDiff.py
+# imageDiff.py
 
 This script uses the cv2 module (part of the OpenCV computer vision library) to compare two images and generate a series of images showing the differences between the two.
 Dependencies
@@ -44,37 +44,47 @@ Dependencies
     OpenCV
     NumPy
 
-###Usage
+### Usage
 
 To use the script, you need to provide the paths to the two images you want to compare as arguments to the cv2.imread() function. The script will then generate a series of images showing the differences between the two images with increasing thresholds for the difference values. The resulting images will be saved to the specified output directory with filenames that include the threshold value used for each image.
 
 
-#showCam.py
+# showCam.py
 
 This script contains functions to display a video feed from a webcam, show the difference between two frames, and transform the video feed.
-##Dependencies
+## Dependencies
 
     cv2
     numpy
     asyncio
 
-##Functions
-###showCam(cam)
+## Functions
+### showCam(cam)
 
 This function takes in a video capture object cam and displays the video feed in a window named "test". The function also converts the frame to grayscale and improves the contrast using histogram equalization. The processed frame is then returned.
-###showDiff(frame, oldFrame)
+### showDiff(frame, oldFrame)
 
 This function takes in two frames, frame and oldFrame, and displays the difference between the two frames in a window named "diff". If an error is encountered, the original frame is returned.
-###showTransDiff(frame, oldFrame)
+### showTransDiff(frame, oldFrame)
 
 This function is similar to showDiff, but it also transforms the frame before displaying the difference. If an error is encountered, the original frame is returned.
 This function is currently disabled
-###showTrans(frame,oldDst)
+### showTrans(frame,oldDst)
 
 This function takes in a frame frame and an old frame oldDst, and performs a perspective transform on frame to correct for lens distortion. The transformed frame is then displayed in a window named "transformed", and the difference between the transformed frame and oldDst is displayed in a window named "diff". The transformed frame is returned.
-###main()
+### main()
 
 This is the main function of the script, which initializes a video capture object and displays the video feed using the functions defined above. The loop continues until the user hits the 'esc' key.
+
+# CAD
+The CAD files are meant to improve testing, allowing for easy maipulation for parameters and providing a interface between the used IC and an arduino.
+The CAD software used is KiCAD.
+
+## analyzer_pcb_without_ic
+Since the LMH1980 is in the very small 8-SOIC package, we decided to extend the pins using thin wire and not mill the appropriate size, since it would most likely end in a desaster, given the limits of the available equipment. While this chip works very good, the complexity of this circuit deter you from using it.
+
+## lm1880
+This PCB also provides an interface with its IC, this chip how ever is big enough for a mill with a .3mm milling attachement to manufacture. Another plus point for this IC is the simplicity of the circuit.
 
 # TODOs:  
 
