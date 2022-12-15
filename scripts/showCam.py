@@ -7,9 +7,10 @@ import time
 
 
 
-async def showCam(cam, new_frame_time,prev_frame_time):
+async def showCam(cam):
     
-    
+    prev_frame_time=0
+    new_frame_time=0
 
     cv2.namedWindow("test")
     
@@ -21,33 +22,7 @@ async def showCam(cam, new_frame_time,prev_frame_time):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         # Equalize the histogram to improve contrast
         frame = cv2.equalizeHist(frame)
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        # time when we finish processing for this frame
-        new_frame_time = time.time()
-        
-        # Calculating the fps
-        
-        # fps will be number of frame processed in given time frame
-        # since their will be most of time error of 0.001 second
-        # we will be subtracting it to get more accurate result
-        fps = 1/(new_frame_time-prev_frame_time)
-        prev_frame_time = new_frame_time
-        # converting the fps into integer
-        fps = int(fps)
-        
-        # converting the fps to string so that we can display it on frame
-        # by using putText function
-        fps = str(fps)
-        
-        # putting the FPS count on the frame
-        cv2.putText(frame, fps, (7, 70), font, 3, (100, 255, 0), 3, cv2.LINE_AA)
-        
-        
         cv2.imshow("test", frame)
-        
-        
-
-        
         return frame
         
 
@@ -124,8 +99,6 @@ async def main():
     cam = cv2.VideoCapture(0)
     oldFrame = None
     oldDst= None
-    prev_frame_time=0
-    new_frame_time=0
     
     while True:
         
@@ -134,8 +107,7 @@ async def main():
             # ESC pressed
             print("Escape hit, closing...")
             break
-        frame = await showCam(cam, new_frame_time, prev_frame_time)
-        
+        frame = await showCam(cam)
         try:
             oldDst = await showTrans(frame,oldDst)
             oldFrame = await showDiff(frame, oldFrame)
