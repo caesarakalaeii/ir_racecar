@@ -19,7 +19,7 @@ async def showCam(cam):
     else:
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         # Equalize the histogram to improve contrast
-        frame = cv2.equalizeHist(frame)
+        #frame = cv2.equalizeHist(frame)
         cv2.imshow("test", frame)
         return frame
         
