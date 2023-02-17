@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 source: https://gist.github.com/rossbar/ebb282c3b73c41c1404123de6cea4771#file-yaml_to_camera_info_publisher-py
 pointgrey_camera_driver (at least the version installed with apt-get) doesn't
@@ -46,13 +47,13 @@ def yaml_to_CameraInfo(yaml_fname):
 
 if __name__ == "__main__":
     # Get fname from command line (cmd line input required)
-    import argparse
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("filename", help="Path to yaml file containing " +\
-                                             "camera calibration data")
-    args = arg_parser.parse_args()
-    filename = args.filename
-
+    #import argparse
+    #arg_parser = argparse.ArgumentParser()
+    #arg_parser.add_argument("filename", help="Path to yaml file containing " +\
+    #                                         "camera calibration data")
+    #args = arg_parser.parse_args()
+    #filename = args.filename
+    filename = "/home/rtlabor/.ros/camera_info/head_camera.yaml"
     # Parse yaml file
     camera_info_msg = yaml_to_CameraInfo(filename)
 

@@ -1,0 +1,4 @@
+catkin_ws/build/*
+catkin_ws/devel/*
+catkin_ws/src/include/*
+*.png

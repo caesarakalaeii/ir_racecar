@@ -1,0 +1,10 @@
+<launch>
+
+ 
+    <node pkg="image_proc" type="image_proc" name="image_proc" ns="usb_cam" />
+    <node pkg="usb_cam" type="usb_cam_node" name="usb_cam" />
+    <node pkg="camera_tests" type="publish_camera_info.py" name="publish_camera_info" />
+
+
+
+</launch>
