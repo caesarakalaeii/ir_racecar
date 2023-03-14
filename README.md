@@ -98,4 +98,3 @@ This PCB also provides an interface with its IC, this chip how ever is big enoug
 ❌ Link documentation for used camera  
 ❌ Use openCV output and odometrie to generate a ROS map  
 
-<sup> Parts of this Repository were generatet using ChatGPT</sup>
