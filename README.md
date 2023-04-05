@@ -76,6 +76,9 @@ This function takes in a frame frame and an old frame oldDst, and performs a per
 
 This is the main function of the script, which initializes a video capture object and displays the video feed using the functions defined above. The loop continues until the user hits the 'esc' key.
 
+# Using multiple Cameras
+Current approach uses https://github.com/linrl3/Image-Stitching-OpenCV
+
 # CAD
 The CAD files are meant to improve testing, allowing for easy maipulation for parameters and providing a interface between the used IC and an arduino.
 The CAD software used is KiCAD.
@@ -98,4 +101,3 @@ This PCB also provides an interface with its IC, this chip how ever is big enoug
 ❌ Link documentation for used camera  
 ❌ Use openCV output and odometrie to generate a ROS map  
 
-<sup> Parts of this Repository were generatet using ChatGPT</sup>
