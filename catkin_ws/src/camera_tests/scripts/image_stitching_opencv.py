@@ -23,7 +23,7 @@ class Image_Stitching():
         if result[0] == cv2.Stitcher_OK:
             return result[1]
         else:
-            raise Exception("Image stitching failed")
+            raise Exception("Image stitching failed, is the overlap big enough?")
 def main(argv1,argv2):
     
     img1 = cv2.imread(argv1)

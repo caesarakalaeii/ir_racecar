@@ -1,8 +1,7 @@
 
-import image_stitching_feature as stitcher
+import camera_hconcat as stitcher
 import rospy
 from sensor_msgs.msg import Image
-import cv2
 import numpy as np
 
 # ROS Image message -> OpenCV2 image converter
@@ -76,7 +75,6 @@ class CameraJoin(object):
                     self.image2 = np.asarray(self.image2)
                 image_joined = self.stitcher.blending(self.image1, self.image2)
                 self.publish_image(image_joined)
-                rospy.sleep(1)
                 
             except Exception as e :
                 if VERBOSE:

@@ -1,4 +1,4 @@
-import image_stitching_opencv as pyfile
+import camera_hconcat as pyfile
 import cv2
 
 
