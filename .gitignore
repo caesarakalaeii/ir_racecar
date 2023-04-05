@@ -1,4 +1,6 @@
 catkin_ws/build/*
 catkin_ws/devel/*
 catkin_ws/src/include/*
+catkin_ws/usb_cam*
 *.png
+*.jpg

@@ -33,7 +33,7 @@ def yaml_to_CameraInfo(yaml_fname):
     """
     # Load data from file
     with open(yaml_fname, "r") as file_handle:
-        calib_data = yaml.load(file_handle)
+        calib_data = yaml.load(file_handle, Loader=yaml.FullLoader)
     # Parse
     camera_info_msg = CameraInfo()
     camera_info_msg.width = calib_data["image_width"]
@@ -53,16 +53,20 @@ if __name__ == "__main__":
     #                                         "camera calibration data")
     #args = arg_parser.parse_args()
     #filename = args.filename
-    filename = "/home/rtlabor/.ros/camera_info/head_camera.yaml"
+    filename1 = "/home/rtlabor/.ros/camera_info/usb_cam1.yaml"
+    filename2 = "/home/rtlabor/.ros/camera_info/usb_cam2.yaml"
     # Parse yaml file
-    camera_info_msg = yaml_to_CameraInfo(filename)
+    camera_info_msg1 = yaml_to_CameraInfo(filename1)
+    camera_info_msg2 = yaml_to_CameraInfo(filename2)
 
     # Initialize publisher node
     rospy.init_node("camera_info_publisher", anonymous=True)
-    publisher = rospy.Publisher("camera_info", CameraInfo, queue_size=10)
+    publisher1 = rospy.Publisher("joined_cams/usb_cam1/camera_info", CameraInfo, queue_size=10)
+    publisher2 = rospy.Publisher("joined_cams/usb_cam2/camera_info", CameraInfo, queue_size=10)
     rate = rospy.Rate(10)
 
     # Run publisher
     while not rospy.is_shutdown():
-        publisher.publish(camera_info_msg)
+        publisher1.publish(camera_info_msg1)
+        publisher2.publish(camera_info_msg2)
         rate.sleep()
