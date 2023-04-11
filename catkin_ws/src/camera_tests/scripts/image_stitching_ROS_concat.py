@@ -20,9 +20,10 @@ class CameraJoin(object):
         self.stitcher = stitcher.Image_Stitching()
         camera1 = "joined_cams/usb_cam1/image_raw"
         camera2 = "joined_cams/usb_cam2/image_raw"
+        publish = "joined_image/image_raw"
         rospy.Subscriber(camera1, Image, self.image1_callback)
         rospy.Subscriber(camera2, Image, self.image2_callback)
-        self.pub = rospy.Publisher('joined_image/image_raw', Image, queue_size=10)
+        self.pub = rospy.Publisher(publish, Image, queue_size=10)
 
 
     def image1_callback(self,msg):
