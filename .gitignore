@@ -5,3 +5,4 @@ catkin_ws/usb_cam*
 *.png
 *.jpg
 catkin_ws/src/camera_tests/scripts/__pycache__*
+.vscode*
