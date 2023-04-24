@@ -1,5 +1,5 @@
 ## ir_racecar
-This repository is for a lane detection system using infrared lights, multiple approaches will be explored
+This repository is for a lane detection system on a MIT-RACEcar style robot. Multiple approaches will be explored, one will be using infrared lights.
 
 
 ## pwm_Gen.ino:  
@@ -77,27 +77,46 @@ This function takes in a frame frame and an old frame oldDst, and performs a per
 This is the main function of the script, which initializes a video capture object and displays the video feed using the functions defined above. The loop continues until the user hits the 'esc' key.
 
 # Using multiple Cameras
-Current approach uses https://github.com/linrl3/Image-Stitching-OpenCV
+One approach uses https://github.com/linrl3/Image-Stitching-OpenCV, this however is now where near real time capable.
 
 # CAD
 The CAD files are meant to improve testing, allowing for easy maipulation for parameters and providing a interface between the used IC and an arduino.
 The CAD software used is KiCAD.
 
 ## analyzer_pcb_without_ic
-Since the LMH1980 is in the very small 8-SOIC package, we decided to extend the pins using thin wire and not mill the appropriate size, since it would most likely end in a desaster, given the limits of the available equipment. While this chip works very good, the complexity of this circuit deter you from using it.
+Since the LMH1980 is in the very small 8-SOIC package, we decided to extend the pins using thin wire and not mill the appropriate size, since it would most likely end in a desaster, given the limits of the available equipment. While this chip works very good, the complexity of this circuit deter you from using it.  
 
-## lm1880
-This PCB also provides an interface with its IC, this chip how ever is big enough for a mill with a .3mm milling attachement to manufacture. Another plus point for this IC is the simplicity of the circuit.
+## lm1881
+This PCB also provides an interface with its IC, this chip how ever is big enough for a mill with a .3mm milling attachement to manufacture. Another plus point for this IC is the simplicity of the circuit.  
+
+Documentations:
+LMH1980 : https://www.ti.com/product/LMH1980
+LM1881  : https://www.ti.com/product/LM1881
+IR-LEDs : https://www.digikey.de/de/products/detail/american-bright-optoelectronics-corporation/BWIR-35C2O48/9678149
+Filter  : https://www.ebay.de/itm/223839832714
+Current Source: https://www.led-stuebchen.de/de/3x-bausatz-led-konstantstromquelle-700ma
+Camera: https://www.dronecosmo.com/products/foxeer-falkor-1200tvl-1-8mm-fpv-camera-limited-edition-white
 
 # TODOs:  
 
 ✅ Upload CAD files for the PCBs   
-❌ Upload CAD files for the Camera and LED fixture  
-❌ Write Documentation for the used ICs  
+✅ Upload CAD files for the Camera and LED fixture  
+✅ Add Documentation for the used ICs  
 ✅ Upload the openCV test scripts  
-❌ Declutter openCV test scripts  
+✅ Link documentation for used ICs 
+✅ refactor stitching files to accept args
+✅ refactor stitching to switch types on launch
+
+~  Declutter openCV test scripts  
+
 ❌ Link documentation for the used Filter  
-❌ Link documentation for used ICs  
 ❌ Link documentation for used camera  
-❌ Use openCV output and odometrie to generate a ROS map  
+❌ Fix .launch file (image_proc broken)
+❌ add image stitching to .launch file
+❌ refactor for general code hygiene
+❌ delete broken / duplicate files
+❌ maybe add folders for further repo hygiene
+❌ comment code more, add explainations why something is bad
+
+❓  Use openCV output and odometrie to generate a ROS map  
 
