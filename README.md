@@ -89,13 +89,13 @@ Since the LMH1980 is in the very small 8-SOIC package, we decided to extend the 
 ## lm1881
 This PCB also provides an interface with its IC, this chip how ever is big enough for a mill with a .3mm milling attachement to manufacture. Another plus point for this IC is the simplicity of the circuit.  
 
-Documentations:
-LMH1980 : https://www.ti.com/product/LMH1980
-LM1881  : https://www.ti.com/product/LM1881
-IR-LEDs : https://www.digikey.de/de/products/detail/american-bright-optoelectronics-corporation/BWIR-35C2O48/9678149
-Filter  : https://www.ebay.de/itm/223839832714
-Current Source: https://www.led-stuebchen.de/de/3x-bausatz-led-konstantstromquelle-700ma
-Camera: https://www.dronecosmo.com/products/foxeer-falkor-1200tvl-1-8mm-fpv-camera-limited-edition-white
+Documentations:  
+LMH1980 : https://www.ti.com/product/LMH1980  
+LM1881  : https://www.ti.com/product/LM1881  
+IR-LEDs : https://www.digikey.de/de/products/detail/american-bright-optoelectronics-corporation/BWIR-35C2O48/9678149  
+Filter  : https://www.ebay.de/itm/223839832714  
+Current Source: https://www.led-stuebchen.de/de/3x-bausatz-led-konstantstromquelle-700ma  
+Camera: https://www.dronecosmo.com/products/foxeer-falkor-1200tvl-1-8mm-fpv-camera-limited-edition-white  
 
 # TODOs:  
 
