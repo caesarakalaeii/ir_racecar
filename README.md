@@ -103,20 +103,20 @@ Camera: https://www.dronecosmo.com/products/foxeer-falkor-1200tvl-1-8mm-fpv-came
 ✅ Upload CAD files for the Camera and LED fixture  
 ✅ Add Documentation for the used ICs  
 ✅ Upload the openCV test scripts  
-✅ Link documentation for used ICs 
-✅ refactor stitching files to accept args
-✅ refactor stitching to switch types on launch
-
+✅ Link documentation for used ICs  
+✅ refactor stitching files to accept args  
+✅ refactor stitching to switch types on launch  
+  
 ~  Declutter openCV test scripts  
-
+  
 ❌ Link documentation for the used Filter  
 ❌ Link documentation for used camera  
-❌ Fix .launch file (image_proc broken)
-❌ add image stitching to .launch file
-❌ refactor for general code hygiene
-❌ delete broken / duplicate files
-❌ maybe add folders for further repo hygiene
-❌ comment code more, add explainations why something is bad
-
-❓  Use openCV output and odometrie to generate a ROS map  
+❌ Fix .launch file (image_proc broken)  
+❌ add image stitching to .launch file  
+❌ refactor for general code hygiene  
+❌ delete broken / duplicate files  
+❌ maybe add folders for further repo hygiene  
+❌ comment code more, add explainations why something is bad  
+  
+❓  Use openCV output and odometrie to generate a ROS map    
 
