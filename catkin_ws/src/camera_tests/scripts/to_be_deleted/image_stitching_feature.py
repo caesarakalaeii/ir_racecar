@@ -9,7 +9,7 @@ class Image_Stitching():
         self.ratio=0.85
         self.min_match=10
         self.sift=cv2.SIFT_create() #maybe replace wir ORB or AKAZE
-        self.smoothing_window_size=50
+        self.smoothing_window_size=100
         self.matching_write = False
 
 
@@ -65,33 +65,45 @@ class Image_Stitching():
         width_panorama = width_img1 +width_img2
 
         panorama1 = np.zeros((height_panorama, width_panorama, 3))
+        start_mask = t.time()
         mask1 = self.create_mask(img1,img2,version='left_image')
         panorama1[0:img1.shape[0], 0:img1.shape[1], :] = img1
         panorama1 *= mask1
         mask2 = self.create_mask(img1,img2,version='right_image')
+        
+        start_warp = t.time()
+        print("time to mask: ", start_warp-start_mask)
         panorama2 = cv2.warpPerspective(img2, H, (width_panorama, height_panorama))*mask2
+        end_warp = t.time()
+        print("Time to warp: ", end_warp-start_warp)
         result=panorama1+panorama2
 
         rows, cols = np.where(result[:, :, 0] != 0)
-        min_row, max_row = min(rows), max(rows) + 1
-        min_col, max_col = min(cols), max(cols) + 1
+        min_row, max_row = np.min(rows), np.max(rows) + 1
+        min_col, max_col = np.min(cols), np.max(cols) + 1
         final_result = result[min_row:max_row, min_col:max_col, :]
+        rest = t.time()
+        print("Time for rest: ", rest-end_warp)
+        cv2.imshow("Test", final_result)
         return cv2.convertScaleAbs(final_result)
     
 def test(argv1,argv2, loop):
-    img1 = cv2.imread(argv1)
-    img2 = cv2.imread(argv2)
+    cam1 = cv2.VideoCapture(0)
+    cam2 = cv2.VideoCapture(2)
     total = 0
     blending_reg = 0
     calcH_time = 0
     blending_no_reg = 0
     for i in range(loop):
+        ret, img1 = cam1.read()
+        ret, img2 = cam2.read()
         start = t.time()
-        final=Image_Stitching().blending(img1,img2)
+        #final=Image_Stitching().blending(img1,img2)
         first = t.time()
         H = Image_Stitching().registration(img1, img2)
         calcH = t.time()
         final = Image_Stitching().blending_no_reg(img1, img2, H)
+        cv2.imshow("Test", final)
         end = t.time()
         total += end-start
         blending_reg += first-start 
@@ -114,6 +126,7 @@ def main(argv1,argv2):
     img2 = cv2.imread(argv2)
     final=Image_Stitching().blending(img1,img2)
     cv2.imwrite('panorama.jpg', final)
+    
 
 
 

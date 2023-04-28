@@ -1,8 +1,10 @@
-
+#!/usr/bin/env python
 import image_join as ij
 import rospy
 from sensor_msgs.msg import Image
 import numpy as np
+import cv2
+import traceback
 
 # ROS Image message -> OpenCV2 image converter
 from cv_bridge import CvBridge, CvBridgeError
@@ -12,13 +14,13 @@ from cv_bridge import CvBridge, CvBridgeError
 class CameraJoin(object):
     
     
-    def __init__(self,camera1 = "joined_cams/usb_cam1/image_raw", camera2 = "joined_cams/usb_cam2/image_raw", publish = "joined_image/image_raw", queue_size = 10, verbose = False, encoding = 'bgr8',joinType = ij.JoinType.CONCAT,  left_y_offset = None, right_y_offset = None, left_x_offset = None, right_x_offset = None, ratio = None, min_match = None,smoothing_window_size = None, matching_write = None, static_matrix = None , stitchter_type = None):
+    def __init__(self,camera1 = "joined_cams/usb_cam1/image_raw", camera2 = "joined_cams/usb_cam2/image_raw", publish = "joined_image/image_raw", queue_size = 10, verbose = False, encoding = 'bgr8',joinType = 1,  left_y_offset = 20, right_y_offset = 0, left_x_offset = 0, right_x_offset = 0, ratio = 0.85, min_match = 10,smoothing_window_size = 50, matching_write = False, static_matrix = False, static_mask = False , stitchter_type = cv2.Stitcher_PANORAMA):
         self.image1 = None
         self.image2 = None
         self.bridge = CvBridge()
         self.VERBOSE = verbose
         self.ENCODING = encoding
-        self.stitcher = ij.ImageJoinFactory(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, stitchter_type)
+        self.stitcher = ij.ImageJoinFactory(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
         rospy.Subscriber(camera1, Image, self.image1_callback)
         rospy.Subscriber(camera2, Image, self.image2_callback)
         self.pub = rospy.Publisher(publish, Image, queue_size= queue_size)
@@ -94,6 +96,31 @@ class CameraJoin(object):
 
 
 if __name__ == '__main__':
-    rospy.init_node('camera_join_subscriber', anonymous=True, log_level=rospy.WARN)
-    my_subs = CameraJoin()
-    my_subs.loop()
+    rospy.init_node('camera_join', anonymous=True, log_level=rospy.WARN)
+    joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type = None
+    try:
+        camera1 = rospy.get_param("/camera_join/camera1")
+        camera2 = rospy.get_param("/camera_join/camera2")
+        publish = rospy.get_param("/camera_join/publish")
+        queue_size = rospy.get_param("/camera_join/queue_size")
+        verbose = rospy.get_param("/camera_join/verbose")
+        encoding = rospy.get_param("/camera_join/camera1")
+        joinType = rospy.get_param("/camera_join/type")
+        if joinType == 1:
+            left_y_offset = rospy.get_param("/camera_join/left_y_offset")
+            right_y_offset = rospy.get_param("/camera_join/right_y_offset")
+            left_x_offset = rospy.get_param("/camera_join/left_x_offset")
+            right_x_offset = rospy.get_param("/camera_join/right_x_offset")
+        if joinType == 2:
+            ratio = rospy.get_param("/camera_join/ratio")
+            min_match = rospy.get_param("/camera_join/min_match")
+            smoothing_window_size = rospy.get_param("/camera_join/smoothing_window_size")
+            matching_write = rospy.get_param("/camera_join/matching_write")
+            static_matrix = rospy.get_param("/camera_join/static_matrix")
+            static_mask = rospy.get_param("/camera_join/static_mask")
+        else: 
+            stitchter_type = rospy.get_param("/camera_join/stitchter_type")
+            my_subs = CameraJoin(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
+            my_subs.loop()
+    except:
+        traceback.print_exc()
