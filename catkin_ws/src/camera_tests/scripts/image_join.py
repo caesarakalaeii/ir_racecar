@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-JoinType = Enum('JoinType', ['CONCAT', 'FEATURE', 'OPENCV'])
+
 
 class ImageJoin(object):
 
@@ -13,15 +13,15 @@ class ImageJoin(object):
 
 class ImageJoinFactory():
 
-    def create_instance(joinType, left_y_offset = None, right_y_offset = None, left_x_offset = None, right_x_offset = None, ratio = None, min_match = None,smoothing_window_size = None, matching_write = None, static_matrix = None , stitchter_type = None):
-        if joinType == JoinType.CONCAT:
+    def create_instance(joinType, left_y_offset = 20, right_y_offset = 0, left_x_offset = 0, right_x_offset = 0, ratio = 0.85, min_match = 10,smoothing_window_size = 50, matching_write = False, static_matrix = False , stitchter_type = cv2.Stitcher_PANORAMA):
+        if joinType == 1:
             return ImageJoinHConcat(left_y_offset, right_y_offset, left_x_offset, right_x_offset)
-        elif joinType == JoinType.FEATURE:
+        elif joinType == 2:
             return ImageJoinFeature(ratio, min_match, smoothing_window_size, matching_write, static_matrix)
-        elif joinType == JoinType.OPENCV:
+        elif joinType == 3:
             return ImageJoinOpenCV(ratio, min_match, smoothing_window_size, stitchter_type)
         else:
-            raise ValueError("JoinType not known, please use either CONCAT, FEATURE or OPENCV")
+            raise ValueError("JoinType not known, please use either CONCAT = 1, FEATURE = 2 or OPENCV = 3")
 
 class ImageJoinHConcat(ImageJoin):
 
@@ -34,8 +34,9 @@ class ImageJoinHConcat(ImageJoin):
 
 
     def blending(self, img1, img2):
-        shape1 = np.shape(img1)
-        shape2 = np.shape(img2)
+        
+        shape1 = img1.shape
+        shape2 = img2.shape
         if self.left_y_offset != 0: #add black bar on top / bottom of imgages
             y_offset = np.zeros((abs(self.left_y_offset),shape1[1], shape1[2]))
             if self.left_y_offset < 0:
@@ -118,8 +119,8 @@ class ImageJoinFeature(ImageJoin):
     def blending(self,img1,img2):
         if(self.static_matrix and self.matrix_set):
             return self.blending_no_reg(img1, img2, self.H)
-        H = self.registration(img1,img2)
-        return self.blending_no_reg(img1, img2, H)
+        self.H = self.registration(img1,img2)
+        return self.blending_no_reg(img1, img2, self.H)
         
     
     def blending_no_reg(self,img1,img2, H):
