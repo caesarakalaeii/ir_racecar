@@ -1,0 +1,5 @@
+cd mmoersener/ir_racecar/catkin_ws/
+catkin_make
+source devel/setup.bash
+cd src/camera_tests/scripts/
+roslaunch camera_processor.launch 

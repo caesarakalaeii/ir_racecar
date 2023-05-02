@@ -20,7 +20,7 @@ class CameraJoin(object):
         self.bridge = CvBridge()
         self.VERBOSE = verbose
         self.ENCODING = encoding
-        self.stitcher = ij.ImageJoinFactory(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
+        self.stitcher = ij.ImageJoinFactory.create_instance(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
         rospy.Subscriber(camera1, Image, self.image1_callback)
         rospy.Subscriber(camera2, Image, self.image2_callback)
         self.pub = rospy.Publisher(publish, Image, queue_size= queue_size)
@@ -97,7 +97,7 @@ class CameraJoin(object):
 
 if __name__ == '__main__':
     rospy.init_node('camera_join', anonymous=True, log_level=rospy.WARN)
-    joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type = None
+    
     try:
         camera1 = rospy.get_param("/camera_join/camera1")
         camera2 = rospy.get_param("/camera_join/camera2")
@@ -120,7 +120,11 @@ if __name__ == '__main__':
             static_mask = rospy.get_param("/camera_join/static_mask")
         else: 
             stitchter_type = rospy.get_param("/camera_join/stitchter_type")
-            my_subs = CameraJoin(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
+            #my_subs = CameraJoin(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
+            my_subs = CameraJoin(camera1="joined_cams/usb_cam1/image_rect", camera2="joined_cams/usb_cam2/image_rect")
             my_subs.loop()
+    except KeyError:
+        my_subs = CameraJoin(camera1="joined_cams/usb_cam1/image_rect", camera2="joined_cams/usb_cam2/image_rect", joinType=2)
+        my_subs.loop()
     except:
         traceback.print_exc()
