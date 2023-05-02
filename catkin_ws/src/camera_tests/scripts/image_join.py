@@ -37,29 +37,29 @@ class ImageJoinFactory():
     }
     
 
-    def create_instance(**kwargs):
+    def create_instance(dict):
         for k, v in ImageJoinFactory.default_list.items():
-            if k in kwargs:
+            if k in dict:
                 continue
-            else: kwargs.update(k=v)
-        joinType = kwargs["joinType"]
+            else: dict.update({k:v})
+        joinType = dict["joinType"]
         if joinType == 1:
-            return ImageJoinHConcat(kwargs["left_y_offset"],
-                                    kwargs["right_y_offset"],
-                                    kwargs["left_x_offset"],
-                                    kwargs["right_x_offset"])
+            return ImageJoinHConcat(dict["left_y_offset"],
+                                    dict["right_y_offset"],
+                                    dict["left_x_offset"],
+                                    dict["right_x_offset"])
         elif joinType == 2:
-            return ImageJoinFeature(kwargs["ratio"],
-                                    kwargs["min_match"],
-                                    kwargs["smoothing_window_size"],
-                                    kwargs["matching_write"],
-                                    kwargs["static_matrix"],
-                                    kwargs["static_mask"])
+            return ImageJoinFeature(dict["ratio"],
+                                    dict["min_match"],
+                                    dict["smoothing_window_size"],
+                                    dict["matching_write"],
+                                    dict["static_matrix"],
+                                    dict["static_mask"])
         elif joinType == 3:
-            return ImageJoinOpenCV(kwargs["ratio"],
-                                   kwargs["min_match"],
-                                   kwargs["smoothing_window_size"],
-                                   kwargs["stitchter_type"])
+            return ImageJoinOpenCV(dict["ratio"],
+                                   dict["min_match"],
+                                   dict["smoothing_window_size"],
+                                   dict["stitchter_type"])
         else:
             raise ValueError("JoinType not known, please use either CONCAT = 1, FEATURE = 2 or OPENCV = 3")
 
