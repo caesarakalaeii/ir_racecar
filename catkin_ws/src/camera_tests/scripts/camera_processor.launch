@@ -19,8 +19,7 @@
     <param name="io_method" value="mmap"/>
   </node>
 
-  <node pkg="camera_tests" type="publish_camera_info.py" name="publish_camera_info" />
-  <node pkg="camera_tests" type="camera_join.py" name="camera_join">
+  <node pkg="camera_tests" type="camera_join.py" name="camera_join" output="screen">
     <param name = "camera1" value = "joined_cams/usb_cam1/image_raw"/>
     <param name = "camera2" value = "joined_cams/usb_cam2/image_raw"/>
     <param name = "publish" value = "joined_image/image_raw"/>
