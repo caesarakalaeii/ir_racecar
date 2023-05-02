@@ -48,7 +48,7 @@ class CameraJoin(object):
     default_list = {
         "camera1": "joined_cams/usb_cam1/image_raw",
         "camera2": "joined_cams/usb_cam2/image_raw",
-        "publish": "joined_image/image_raw",
+        "publish": "joined_cams/joined_image",
         "queue_size": 10,
         "encoding": 'bgr8',
         "verbose": False,
@@ -83,6 +83,7 @@ class CameraJoin(object):
         self.image1 = None
         self.image2 = None
         self.bridge = CvBridge()
+        self.image_joined = None
         self.VERBOSE = dict["verbose"]
         self.ENCODING = dict["encoding"]
         self.timing = dict["timing"]
@@ -198,11 +199,20 @@ class CameraJoin(object):
                         print("Converting Image 2 to ndarray")
                 if self.timing:
                     start_blending = t.time()
-                image_joined = self.stitcher.blending(self.image1, self.image2)
+                old_image = self.image_joined
+                try:
+                    self.image_joined = self.stitcher.blending(self.image1, self.image2)
+                except Exception as e:
+                    if self.VERBOSE:
+                        print(e, "\n Stale image will be used")
+                    self.image_joined = old_image
                 if self.timing:
                     end_blending = t.time()
                     print("Time to blend:", (end_blending-start_blending)*1000, "ms")
-                self.publish_image(image_joined)
+                try:
+                    self.publish_image(self.image_joined)
+                except:
+                    pass
                 
             except Exception as e :
                 print(e)
@@ -238,9 +248,9 @@ if __name__ == '__main__':
     print("Starting Node, Fetching params")
     runtime_list = dict()
     runtime_list.update({"joinType": 2})
-    runtime_list.update({"verbose":False})
+    runtime_list.update({"verbose":True})
     runtime_list.update({"direct_import": False})
-    runtime_list.update({"static_matrix": False})
+    runtime_list.update({"static_matrix": True})
     runtime_list.update({"timing":False})
     try:
         for k,v in CameraJoin.param_list.items():

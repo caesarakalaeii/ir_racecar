@@ -199,7 +199,7 @@ class ImageJoinFeature(ImageJoin):
             try:
                 panorama2 = cv2.warpPerspective(img2, H, (width_panorama, height_panorama))*mask2
             except:
-                print("Couldn't match images")
+                raise Exception("Couldn't match images.")
             result=panorama1+panorama2
 
             rows, cols = np.where(result[:, :] != 0)
