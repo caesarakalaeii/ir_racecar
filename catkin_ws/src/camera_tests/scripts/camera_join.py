@@ -4,7 +4,6 @@ import rospy
 from sensor_msgs.msg import Image
 import numpy as np
 import cv2
-import traceback
 
 # ROS Image message -> OpenCV2 image converter
 from cv_bridge import CvBridge, CvBridgeError
@@ -14,11 +13,10 @@ from cv_bridge import CvBridge, CvBridgeError
 class CameraJoin(object):
     
     
-    def __init__(self,camera1 = "joined_cams/usb_cam1/image_raw", camera2 = "joined_cams/usb_cam2/image_raw", publish = "joined_image/image_raw", queue_size = 10, verbose = False, encoding = 'bgr8',joinType = 1,  left_y_offset = 20, right_y_offset = 0, left_x_offset = 0, right_x_offset = 0, ratio = 0.85, min_match = 10,smoothing_window_size = 50, matching_write = False, static_matrix = False, static_mask = False , stitchter_type = cv2.Stitcher_PANORAMA):
+    def __init__(self,camera1 = "joined_cams/usb_cam1/image_raw", camera2 = "joined_cams/usb_cam2/image_raw", publish = "joined_image/image_raw", queue_size = 10, encoding = 'bgr8',joinType = 1,  left_y_offset = 20, right_y_offset = 0, left_x_offset = 0, right_x_offset = 0, ratio = 0.85, min_match = 10,smoothing_window_size = 50, matching_write = False, static_matrix = False, static_mask = False , stitchter_type = cv2.Stitcher_PANORAMA):
         self.image1 = None
         self.image2 = None
         self.bridge = CvBridge()
-        self.VERBOSE = verbose
         self.ENCODING = encoding
         self.stitcher = ij.ImageJoinFactory.create_instance(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
         rospy.Subscriber(camera1, Image, self.image1_callback)
@@ -27,14 +25,12 @@ class CameraJoin(object):
 
 
     def image1_callback(self,msg):
-        if(self.VERBOSE):
-            print("Image1 received with encoding:", msg.encoding)
+        rospy.logdebug("Image1 received with encoding: ", msg.encoding)
         self.set_image(msg, 1)
 
 
     def image2_callback(self,msg):
-        if(self.VERBOSE):
-            print("Image2 received with encoding:", msg.encoding)
+        rospy.logdebug("Image2 received with encoding: ", msg.encoding)
         self.set_image(msg, 2)
 
     def loop(self):
@@ -54,11 +50,11 @@ class CameraJoin(object):
             
             self.image_join()
         except CvBridgeError as e:
-            print(e)
+            rospy.logerr(e)
         except ValueError as e:
-            print(e)
+            rospy.logerr(e)
         except Exception as e:
-            print(e)
+            rospy.logerr(e)
 
 
 
@@ -66,9 +62,8 @@ class CameraJoin(object):
 
     def image_join(self):
     # Join images
-        if self.image1 is not None and self.image2 is not None:         
-            if self.VERBOSE:
-                print("Joining images")
+        if self.image1 is not None and self.image2 is not None:
+            rospy.logdebug("Joining images")
             try:
                 if not isinstance(self.image1, np.ndarray):
                     self.image1 = np.asarray(self.image1)
@@ -78,12 +73,9 @@ class CameraJoin(object):
                 self.publish_image(image_joined)
                 
             except Exception as e :
-                if self.VERBOSE:
-                    print(e)
-                pass
+                rospy.logerr(e)
         else:
-            if self.VERBOSE:
-                print("At least one Image is None")
+            rospy.logdebug("At least one Image is None")
 
     
     def publish_image(self,image_joined):
@@ -96,8 +88,8 @@ class CameraJoin(object):
 
 
 if __name__ == '__main__':
-    rospy.init_node('camera_join', anonymous=True, log_level=rospy.WARN)
-    
+    rospy.init_node('camera_join', anonymous=True, log_level=rospy.DEBUG)
+    rospy.loginfo("Starting Node, Fetching params")
     try:
         camera1 = rospy.get_param("/camera_join/camera1")
         camera2 = rospy.get_param("/camera_join/camera2")
@@ -123,8 +115,10 @@ if __name__ == '__main__':
             #my_subs = CameraJoin(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
             my_subs = CameraJoin(camera1="joined_cams/usb_cam1/image_rect", camera2="joined_cams/usb_cam2/image_rect")
             my_subs.loop()
+            rospy.loginfo("Node started with given Params")
     except KeyError:
+        rospy.logerr("Fetching Params failed, using default params")
         my_subs = CameraJoin(camera1="joined_cams/usb_cam1/image_rect", camera2="joined_cams/usb_cam2/image_rect", joinType=2)
         my_subs.loop()
     except:
-        traceback.print_exc()
+        rospy.logfatal("Couldn't start Node")
