@@ -13,7 +13,6 @@ try:
     import cv2
     import warnings
     import threading
-    import cv_bridge
 except:
     raise ImportError("Imports failed")
 
@@ -66,11 +65,11 @@ class CameraJoin(object):
     
     
     def __init__(self,**kwargs):
-        for k,v in kwargs:
+        for k,v in kwargs.items():
             if k in CameraJoin.default_list:
                 continue
             else: print("Not recognized key ", k, " and value ", v)
-        for k,v in CameraJoin.default_list:
+        for k,v in CameraJoin.default_list.items():
             if k in kwargs:
                 continue
             else: kwargs.update(k=v)
@@ -179,14 +178,14 @@ if __name__ == '__main__':
 
    
     value_list = dict()
-    for k, v in CameraJoin.param_list:
+    for k, v in CameraJoin.param_list.items():
         value_list.update({k, None})
     # ROS Image message -> OpenCV2 image converter
     from cv_bridge import CvBridge, CvBridgeError
     rospy.init_node('camera_join', anonymous=True, log_level=rospy.DEBUG)
     print("Starting Node, Fetching params")
     try:
-        for k,v in CameraJoin.param_list:
+        for k,v in CameraJoin.param_list.items():
             if rospy.has_param(v):
                 value_list.update({k, rospy.get_param(v)})
                 print("Parameter ", v, "has been found and added" )

@@ -38,7 +38,7 @@ class ImageJoinFactory():
     
 
     def create_instance(**kwargs):
-        for k, v in ImageJoinFactory.default_list:
+        for k, v in ImageJoinFactory.default_list.items():
             if k in kwargs:
                 continue
             else: kwargs.update(k=v)
