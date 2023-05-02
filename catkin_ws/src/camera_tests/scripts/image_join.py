@@ -138,7 +138,7 @@ class ImageJoinFeature(ImageJoin):
         width_panorama = width_img1 +width_img2
         depth = 0
         try:
-            depth = img1.shape[3]
+            depth = img1.shape[2]
         except:
             depth = 0
         if depth == 0:

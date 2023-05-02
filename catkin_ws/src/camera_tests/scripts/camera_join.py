@@ -22,15 +22,18 @@ class CameraJoin(object):
         rospy.Subscriber(camera1, Image, self.image1_callback)
         rospy.Subscriber(camera2, Image, self.image2_callback)
         self.pub = rospy.Publisher(publish, Image, queue_size= queue_size)
+        rospy.loginfo("Node sucessfully initialized")
 
 
     def image1_callback(self,msg):
-        rospy.logdebug("Image1 received with encoding: ", msg.encoding)
+        str = "Image1 received with encoding: " + msg.encoding
+        rospy.logdebug(str)
         self.set_image(msg, 1)
 
 
     def image2_callback(self,msg):
-        rospy.logdebug("Image2 received with encoding: ", msg.encoding)
+        str = "Image2 received with encoding: " + msg.encoding
+        rospy.logdebug(str)
         self.set_image(msg, 2)
 
     def loop(self):
@@ -118,7 +121,7 @@ if __name__ == '__main__':
             rospy.loginfo("Node started with given Params")
     except KeyError:
         rospy.logerr("Fetching Params failed, using default params")
-        my_subs = CameraJoin(camera1="joined_cams/usb_cam1/image_rect", camera2="joined_cams/usb_cam2/image_rect", joinType=2)
+        my_subs = CameraJoin(camera1="joined_cams/usb_cam1/image_rect", camera2="joined_cams/usb_cam2/image_rect", joinType=2, static_matrix=True)
         my_subs.loop()
     except:
         rospy.logfatal("Couldn't start Node")
