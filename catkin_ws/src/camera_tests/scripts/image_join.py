@@ -4,6 +4,7 @@ import cv2
 
 
 class ImageJoin(object):
+    
 
     def __init__(self):
         pass
@@ -12,14 +13,53 @@ class ImageJoin(object):
         pass
 
 class ImageJoinFactory():
+    default_list = {
+        "camera1": "joined_cams/usb_cam1/image_raw",
+        "camera2": "joined_cams/usb_cam2/image_raw",
+        "publish": "joined_image/image_raw",
+        "queue_size": 10,
+        "encoding": 'bgr8',
+        "verbose": False,
+        "joinType": 1,
+        "left_y_offset": 20,
+        "right_y_offset": 0,
+        "left_x_offset": 0,
+        "right_x_offset": 0,
+        "ratio": 0.85,
+        "min_match": 10,
+        "smoothing_window_size": 50,
+        "matching_write": False,
+        "static_matrix": False,
+        "static_mask": False,
+        "stitchter_type": cv2.Stitcher_PANORAMA,
+        "direct_import": False,
+        "direct_import_sources": (0,2)
+    }
+    
 
-    def create_instance(joinType, left_y_offset = 20, right_y_offset = 0, left_x_offset = 0, right_x_offset = 0, ratio = 0.85, min_match = 10,smoothing_window_size = 50, matching_write = False, static_matrix = False, static_mask = False , stitchter_type = cv2.Stitcher_PANORAMA):
+    def create_instance(**kwargs):
+        for k, v in ImageJoinFactory.default_list:
+            if k in kwargs:
+                continue
+            else: kwargs.update(k=v)
+        joinType = kwargs["joinType"]
         if joinType == 1:
-            return ImageJoinHConcat(left_y_offset, right_y_offset, left_x_offset, right_x_offset)
+            return ImageJoinHConcat(kwargs["left_y_offset"],
+                                    kwargs["right_y_offset"],
+                                    kwargs["left_x_offset"],
+                                    kwargs["right_x_offset"])
         elif joinType == 2:
-            return ImageJoinFeature(ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask)
+            return ImageJoinFeature(kwargs["ratio"],
+                                    kwargs["min_match"],
+                                    kwargs["smoothing_window_size"],
+                                    kwargs["matching_write"],
+                                    kwargs["static_matrix"],
+                                    kwargs["static_mask"])
         elif joinType == 3:
-            return ImageJoinOpenCV(ratio, min_match, smoothing_window_size, stitchter_type)
+            return ImageJoinOpenCV(kwargs["ratio"],
+                                   kwargs["min_match"],
+                                   kwargs["smoothing_window_size"],
+                                   kwargs["stitchter_type"])
         else:
             raise ValueError("JoinType not known, please use either CONCAT = 1, FEATURE = 2 or OPENCV = 3")
 

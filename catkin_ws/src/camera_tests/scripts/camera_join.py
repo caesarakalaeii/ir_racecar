@@ -13,29 +13,82 @@ try:
     import cv2
     import warnings
     import threading
+    import cv_bridge
 except:
-    raise Exception("Imports failed")
+    raise ImportError("Imports failed")
 
 
 
 class CameraJoin(object):
+    param_list = {
+        "camera1": "/camera_join/camera1",
+        "camera2": "/camera_join/camera2",
+        "publish": "/camera_join/publish",
+        "queue_size": "/camera_join/queue_size",
+        "verbose": "/camera_join/verbose",
+        "encoding": "/camera_join/camera1",
+        "joinType": "/camera_join/type",
+        "left_y_offset": "/camera_join/left_y_offset",
+        "right_y_offset": "/camera_join/right_y_offset",
+        "left_x_offset": "/camera_join/left_x_offset",
+        "right_x_offset": "/camera_join/right_x_offset",
+        "ratio": "/camera_join/ratio",
+        "min_match": "/camera_join/min_match",
+        "smoothing_window_size": "/camera_join/smoothing_window_size",
+        "matching_write": "/camera_join/matching_write",
+        "static_matrix": "/camera_join/static_matrix",
+        "static_mask": "/camera_join/static_mask",
+        "stitchter_type": "/camera_join/stitchter_type"
+    }
+
+    default_list = {
+        "camera1": "joined_cams/usb_cam1/image_raw",
+        "camera2": "joined_cams/usb_cam2/image_raw",
+        "publish": "joined_image/image_raw",
+        "queue_size": 10,
+        "encoding": 'bgr8',
+        "verbose": False,
+        "joinType": 1,
+        "left_y_offset": 20,
+        "right_y_offset": 0,
+        "left_x_offset": 0,
+        "right_x_offset": 0,
+        "ratio": 0.85,
+        "min_match": 10,
+        "smoothing_window_size": 50,
+        "matching_write": False,
+        "static_matrix": False,
+        "static_mask": False,
+        "stitchter_type": cv2.Stitcher_PANORAMA,
+        "direct_import": False,
+        "direct_import_sources": (0,2)
+    }
     
     
-    def __init__(self,camera1 = "joined_cams/usb_cam1/image_raw", camera2 = "joined_cams/usb_cam2/image_raw", publish = "joined_image/image_raw", queue_size = 10, encoding = 'bgr8', verbose = False,joinType = 1,  left_y_offset = 20, right_y_offset = 0, left_x_offset = 0, right_x_offset = 0, ratio = 0.85, min_match = 10,smoothing_window_size = 50, matching_write = False, static_matrix = False, static_mask = False , stitchter_type = cv2.Stitcher_PANORAMA, direct_import = False, direct_import_sources = (0,2)):
+    def __init__(self,**kwargs):
+        for k,v in kwargs:
+            if k in CameraJoin.default_list:
+                continue
+            else: print("Not recognized key ", k, " and value ", v)
+        for k,v in CameraJoin.default_list:
+            if k in kwargs:
+                continue
+            else: kwargs.update(k=v)
+        
         self.image1 = None
         self.image2 = None
         self.bridge = CvBridge()
-        self.VERBOSE = verbose
-        self.ENCODING = encoding
-        self.stitcher = ij.ImageJoinFactory.create_instance(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
-        self.pub = rospy.Publisher(publish, Image, queue_size= queue_size)
-        if not direct_import:
-            rospy.Subscriber(camera1, Image, self.image1_callback)
-            rospy.Subscriber(camera2, Image, self.image2_callback)
+        self.VERBOSE = kwargs["verbose"]
+        self.ENCODING = kwargs["encoding"]
+        self.stitcher = ij.ImageJoinFactory.create_instance(kwargs)
+        self.pub = rospy.Publisher(kwargs["publish"], Image, queue_size= kwargs["queue_size"])
+        if not kwargs["direct_import"]:
+            rospy.Subscriber(kwargs["camera1"], Image, self.image1_callback)
+            rospy.Subscriber(kwargs["camera2"], Image, self.image2_callback)
         else:
             print("initializing direct import")
-            self.cam1 = cv2.VideoCapture(direct_import_sources[0])
-            self.cam2 = cv2.VideoCapture(direct_import_sources[1])
+            self.cam1 = cv2.VideoCapture(kwargs["direct_import_sources"][0])
+            self.cam2 = cv2.VideoCapture(kwargs["direct_import_sources"][1])
             
             self.thread = threading.Thread(target = self.direct_import_loop)
             self.thread.start()
@@ -43,6 +96,7 @@ class CameraJoin(object):
         
         print("Node sucessfully initialized")
 
+    
     def direct_import_loop(self):
         print("Direct import started")
         while not rospy.is_shutdown():
@@ -85,10 +139,6 @@ class CameraJoin(object):
                 self.image2 = self.bridge.imgmsg_to_cv2(image, self.ENCODING)
             
             self.image_join()
-        except CvBridgeError as e:
-            print(e)
-        except ValueError as e:
-            print(e)
         except Exception as e:
             print(e)
 
@@ -126,41 +176,31 @@ class CameraJoin(object):
 
 
 if __name__ == '__main__':
-    
 
+   
+    value_list = dict()
+    for k, v in CameraJoin.param_list:
+        value_list.update({k, None})
     # ROS Image message -> OpenCV2 image converter
     from cv_bridge import CvBridge, CvBridgeError
     rospy.init_node('camera_join', anonymous=True, log_level=rospy.DEBUG)
-    warnings.warn("Starting Node, Fetching params")
+    print("Starting Node, Fetching params")
     try:
-        camera1 = rospy.get_param("/camera_join/camera1")
-        camera2 = rospy.get_param("/camera_join/camera2")
-        publish = rospy.get_param("/camera_join/publish")
-        queue_size = rospy.get_param("/camera_join/queue_size")
-        self.VERBOSE = rospy.get_param("/camera_join/self.VERBOSE")
-        encoding = rospy.get_param("/camera_join/camera1")
-        joinType = rospy.get_param("/camera_join/type")
-        if joinType == 1:
-            left_y_offset = rospy.get_param("/camera_join/left_y_offset")
-            right_y_offset = rospy.get_param("/camera_join/right_y_offset")
-            left_x_offset = rospy.get_param("/camera_join/left_x_offset")
-            right_x_offset = rospy.get_param("/camera_join/right_x_offset")
-        if joinType == 2:
-            ratio = rospy.get_param("/camera_join/ratio")
-            min_match = rospy.get_param("/camera_join/min_match")
-            smoothing_window_size = rospy.get_param("/camera_join/smoothing_window_size")
-            matching_write = rospy.get_param("/camera_join/matching_write")
-            static_matrix = rospy.get_param("/camera_join/static_matrix")
-            static_mask = rospy.get_param("/camera_join/static_mask")
+        for k,v in CameraJoin.param_list:
+            if rospy.has_param(v):
+                value_list.update({k, rospy.get_param(v)})
+                print("Parameter ", v, "has been found and added" )
+            else: 
+                print("Parameter ", v, "has not been found and added" )
+                continue
         else: 
-            stitchter_type = rospy.get_param("/camera_join/stitchter_type")
-            #my_subs = CameraJoin(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
-            my_subs = CameraJoin(camera1="joined_cams/usb_cam1/image_rect", camera2="joined_cams/usb_cam2/image_rect")
+            my_subs = CameraJoin(value_list)
+            
             my_subs.loop()
-            rospy.loginfo("Node started with given Params")
+            print("Node started with given Params")
     except KeyError:
         print("Fetching Params failed, using default params")
-        my_subs = CameraJoin(camera1="joined_cams/usb_cam1/image_raw", camera2="joined_cams/usb_cam2/image_raw", joinType=2, static_matrix=True, direct_import=True)
+        my_subs = CameraJoin(camera1="joined_cams/usb_cam1/image_raw", camera2="joined_cams/usb_cam2/image_raw", joinType=2, static_matrix=False, direct_import=True)
         my_subs.loop()
     except:
         warnings.warn("Couldn't start Node, is Cam1 the right one?")
