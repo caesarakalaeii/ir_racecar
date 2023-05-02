@@ -12,6 +12,7 @@ try:
     import numpy as np
     import cv2
     import warnings
+    import threading
 except:
     raise Exception("Imports failed")
 
@@ -20,10 +21,11 @@ except:
 class CameraJoin(object):
     
     
-    def __init__(self,camera1 = "joined_cams/usb_cam1/image_raw", camera2 = "joined_cams/usb_cam2/image_raw", publish = "joined_image/image_raw", queue_size = 10, encoding = 'bgr8',joinType = 1,  left_y_offset = 20, right_y_offset = 0, left_x_offset = 0, right_x_offset = 0, ratio = 0.85, min_match = 10,smoothing_window_size = 50, matching_write = False, static_matrix = False, static_mask = False , stitchter_type = cv2.Stitcher_PANORAMA, direct_import = False, direct_import_sources = (0,2)):
+    def __init__(self,camera1 = "joined_cams/usb_cam1/image_raw", camera2 = "joined_cams/usb_cam2/image_raw", publish = "joined_image/image_raw", queue_size = 10, encoding = 'bgr8', verbose = False,joinType = 1,  left_y_offset = 20, right_y_offset = 0, left_x_offset = 0, right_x_offset = 0, ratio = 0.85, min_match = 10,smoothing_window_size = 50, matching_write = False, static_matrix = False, static_mask = False , stitchter_type = cv2.Stitcher_PANORAMA, direct_import = False, direct_import_sources = (0,2)):
         self.image1 = None
         self.image2 = None
         self.bridge = CvBridge()
+        self.VERBOSE = verbose
         self.ENCODING = encoding
         self.stitcher = ij.ImageJoinFactory.create_instance(joinType ,left_y_offset, right_y_offset, left_x_offset, right_x_offset, ratio, min_match, smoothing_window_size, matching_write, static_matrix, static_mask, stitchter_type)
         self.pub = rospy.Publisher(publish, Image, queue_size= queue_size)
@@ -31,15 +33,18 @@ class CameraJoin(object):
             rospy.Subscriber(camera1, Image, self.image1_callback)
             rospy.Subscriber(camera2, Image, self.image2_callback)
         else:
+            print("initializing direct import")
             self.cam1 = cv2.VideoCapture(direct_import_sources[0])
             self.cam2 = cv2.VideoCapture(direct_import_sources[1])
-            print("Direct import started")
-            self.direct_import_loop()
+            
+            self.thread = threading.Thread(target = self.direct_import_loop)
+            self.thread.start()
             
         
         print("Node sucessfully initialized")
 
     def direct_import_loop(self):
+        print("Direct import started")
         while not rospy.is_shutdown():
             ret1, self.image1 = self.cam1.read()
             if not ret1 == True: 
@@ -52,14 +57,16 @@ class CameraJoin(object):
             self.image_join()
 
     def image1_callback(self,msg):
-        str = "Image1 received with encoding: " + msg.encoding
-        print(str)
+        if self.VERBOSE:
+            str = "Image1 received with encoding: " + msg.encoding
+            print(str)
         self.set_image(msg, 1)
 
 
     def image2_callback(self,msg):
-        str = "Image2 received with encoding: " + msg.encoding
-        print(str)
+        if self.VERBOSE:
+            str = "Image2 received with encoding: " + msg.encoding
+            print(str)
         self.set_image(msg, 2)
 
     def loop(self):
@@ -92,7 +99,8 @@ class CameraJoin(object):
     def image_join(self):
     # Join images
         if self.image1 is not None and self.image2 is not None:
-            print("Joining images")
+            if self.VERBOSE:
+                print("Joining images")
             try:
                 if not isinstance(self.image1, np.ndarray):
                     self.image1 = np.asarray(self.image1)
@@ -123,13 +131,13 @@ if __name__ == '__main__':
     # ROS Image message -> OpenCV2 image converter
     from cv_bridge import CvBridge, CvBridgeError
     rospy.init_node('camera_join', anonymous=True, log_level=rospy.DEBUG)
-    rospy.loginfo("Starting Node, Fetching params")
+    warnings.warn("Starting Node, Fetching params")
     try:
         camera1 = rospy.get_param("/camera_join/camera1")
         camera2 = rospy.get_param("/camera_join/camera2")
         publish = rospy.get_param("/camera_join/publish")
         queue_size = rospy.get_param("/camera_join/queue_size")
-        verbose = rospy.get_param("/camera_join/verbose")
+        self.VERBOSE = rospy.get_param("/camera_join/self.VERBOSE")
         encoding = rospy.get_param("/camera_join/camera1")
         joinType = rospy.get_param("/camera_join/type")
         if joinType == 1:
