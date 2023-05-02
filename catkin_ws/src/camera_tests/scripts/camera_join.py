@@ -206,7 +206,8 @@ class CameraJoin(object):
                 
             except Exception as e :
                 print(e)
-        else:
+        elif self.VERBOSE:
+            
             print("At least one Image is None")
 
     
@@ -237,10 +238,10 @@ if __name__ == '__main__':
     print("Starting Node, Fetching params")
     runtime_list = dict()
     runtime_list.update({"joinType": 2})
-    runtime_list.update({"verbose":True})
+    runtime_list.update({"verbose":False})
     runtime_list.update({"direct_import": False})
     runtime_list.update({"static_matrix": False})
-    runtime_list.update({"timing":True})
+    runtime_list.update({"timing":False})
     try:
         for k,v in CameraJoin.param_list.items():
             if rospy.has_param(v):

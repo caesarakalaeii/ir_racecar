@@ -196,7 +196,10 @@ class ImageJoinFeature(ImageJoin):
                 mask2 = self.create_mask(img1,img2,version='right_image', hasDepth=False)
                 self.mask2 = mask2
                 self.mask_set = True
-            panorama2 = cv2.warpPerspective(img2, H, (width_panorama, height_panorama))*mask2
+            try:
+                panorama2 = cv2.warpPerspective(img2, H, (width_panorama, height_panorama))*mask2
+            except:
+                print("Couldn't match images")
             result=panorama1+panorama2
 
             rows, cols = np.where(result[:, :] != 0)
