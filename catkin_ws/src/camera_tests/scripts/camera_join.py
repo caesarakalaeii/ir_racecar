@@ -179,7 +179,7 @@ if __name__ == '__main__':
    
     value_list = dict()
     for k, v in CameraJoin.param_list.items():
-        value_list.update({k, None})
+        value_list.update(k= None)
     # ROS Image message -> OpenCV2 image converter
     from cv_bridge import CvBridge, CvBridgeError
     rospy.init_node('camera_join', anonymous=True, log_level=rospy.DEBUG)
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     try:
         for k,v in CameraJoin.param_list.items():
             if rospy.has_param(v):
-                value_list.update({k, rospy.get_param(v)})
+                value_list.update(k= rospy.get_param(v))
                 print("Parameter ", v, "has been found and added" )
             else: 
                 print("Parameter ", v, "has not been found and added" )
