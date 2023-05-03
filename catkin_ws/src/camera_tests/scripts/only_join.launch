@@ -1,7 +1,9 @@
 <launch>
 
   <node pkg="camera_tests" type="camera_join.py" name="camera_join" output="screen">
-    <param name = "camera1" value = "/joined_cams/usb_cam1/image_raw"/>
+
+    <param name = "camera1" value = "usb_cam1/image_raw" />
+    <param name = "camera2" value = "usb_cam2/image_raw" />
     <param name = "publish" value = "joined_image/image_raw"/>
     <param name = "queue_size" value = "10"/>
     <param name = "verbose" value = "True"/>

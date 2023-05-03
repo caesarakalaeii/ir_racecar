@@ -64,7 +64,7 @@ class CameraJoin(object):
         "publish": "~publish",
         "queue_size": "~queue_size",
         "verbose": "~verbose",
-        "encoding": "~camera1",
+        "encoding": "~encoding",
         "join_type": "~join_type",
         "left_y_offset": "~left_y_offset",
         "right_y_offset": "~right_y_offset",
@@ -307,10 +307,9 @@ if __name__ == '__main__':
     runtime_list.update({"static_matrix": True})
     runtime_list.update({"timing":False})
     runtime_list.update({"console_log":True})
+    
     l = Logger(False, runtime_list["console_log"])
-    value_list = dict()
-    for k, v in CameraJoin.param_list.items():
-        value_list.update({k: None})
+    value_list = CameraJoin.param_list
     # ROS Image message -> OpenCV2 image converter
     from cv_bridge import CvBridge, CvBridgeError
     name = 'camera_join' #TODO find a way to make this variable
@@ -323,12 +322,23 @@ if __name__ == '__main__':
     runtime_list.update({"static_matrix": True})
     runtime_list.update({"timing":False})
     runtime_list.update({"console_log":True})
+    simulate_params = False
+    if simulate_params:
+        l.warning("Simulating set Parameters, if not launched from a .launch file")
     print("Available Params:")
-    for i in rospy.get_param_names():
+    param_names = rospy.get_param_names()
+    for i in param_names:
         if "camera_join" in i:
             print(i)
             if not any(True for k in CameraJoin.default_list if k in i):
                 l.warning("Param {} was not recognized as a valid parameter and will be ignored!".format(i))
+    
+    if not any(True for i in param_names if i in CameraJoin.param_list.keys()) and simulate_params:
+            for k,v in CameraJoin.param_list.items():
+                try:
+                    rospy.set_param(v, runtime_list[k])
+                except KeyError:
+                    rospy.set_param(v, CameraJoin.default_list[k])
     try:
         for k,v in CameraJoin.param_list.items():
             if rospy.has_param(v): #not using the built in default values of rospy for better verbosity
