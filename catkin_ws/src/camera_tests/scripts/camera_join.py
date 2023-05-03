@@ -17,42 +17,81 @@ try:
     import time as t
 except:
     raise ImportError("Imports failed")
+class Logger():
+    def __init__(self, ros_log = False, console_log = False):
+        self.ros_log = ros_log
+        self.console_log = console_log
 
-
+    def warning(self, skk):
+        
+        if self.console_log:
+            print("\033[93m {}\033[00m" .format("WARNING:"),"\033[93m {}\033[00m" .format(skk))
+        if self.ros_log:
+            rospy.logwarn(skk)
+       
+    def error(self, skk):
+        if self.console_log:   
+            print("\033[91m {}\033[00m" .format("ERROR:"),"\033[91m {}\033[00m" .format(skk))
+        if self.ros_log:
+            rospy.logerr(skk)
+        
+    def fail(self, skk):
+        if self.console_log: 
+            print("\033[91m {}\033[00m" .format("FATAL:"),"\033[91m {}\033[00m" .format(skk))
+        if self.ros_log:
+            rospy.logfatal(skk)
+    def passing(self, skk): 
+        if self.console_log: 
+            print("\033[92m {}\033[00m" .format(skk))
+        if self.ros_log:
+            rospy.loginfo(skk)
+    def passingblue(self, skk): 
+        if self.console_log: 
+            print("\033[96m {}\033[00m" .format(skk))
+        if self.ros_log:
+            rospy.loginfo(skk)
+    def info(self, skk): 
+        if self.console_log: 
+            print("\033[94m {}\033[00m" .format("Info:"),"\033[94m {}\033[00m" .format(skk))
+        if self.ros_log:
+            rospy.loginfo(skk)
 
 class CameraJoin(object):
+    #~ indicates a private parameter and will adjust to the envs namespace
     param_list = {
-        "camera1": "/camera_join/camera1",
-        "camera2": "/camera_join/camera2",
-        "publish": "/camera_join/publish",
-        "queue_size": "/camera_join/queue_size",
-        "verbose": "/camera_join/verbose",
-        "encoding": "/camera_join/camera1",
-        "joinType": "/camera_join/type",
-        "left_y_offset": "/camera_join/left_y_offset",
-        "right_y_offset": "/camera_join/right_y_offset",
-        "left_x_offset": "/camera_join/left_x_offset",
-        "right_x_offset": "/camera_join/right_x_offset",
-        "ratio": "/camera_join/ratio",
-        "min_match": "/camera_join/min_match",
-        "smoothing_window_size": "/camera_join/smoothing_window_size",
-        "matching_write": "/camera_join/matching_write",
-        "static_matrix": "/camera_join/static_matrix",
-        "static_mask": "/camera_join/static_mask",
-        "stitchter_type": "/camera_join/stitchter_type",
-        "direct_import": "/camera_join/direct_import",
-        "direct_import_sources": "/camera_join/direct_import_sources",
-        "timing": "/camera_join/timing"
+        "camera1": "~camera1",
+        "camera2": "~camera2",
+        "publish": "~publish",
+        "queue_size": "~queue_size",
+        "verbose": "~verbose",
+        "encoding": "~camera1",
+        "join_type": "~join_type",
+        "left_y_offset": "~left_y_offset",
+        "right_y_offset": "~right_y_offset",
+        "left_x_offset": "~left_x_offset",
+        "right_x_offset": "~right_x_offset",
+        "ratio": "~ratio",
+        "min_match": "~min_match",
+        "smoothing_window_size": "~smoothing_window_size",
+        "matching_write": "~matching_write",
+        "static_matrix": "~static_matrix",
+        "static_mask": "~static_mask",
+        "stitchter_type": "~stitchter_type",
+        "direct_import": "~direct_import",
+        "direct_import_sources": "~direct_import_sources",
+        "timing": "~timing",
+        "ros_log": "~ros_log",
+        "console_log": "~console_log"
     }
 
     default_list = {
-        "camera1": "joined_cams/usb_cam1/image_raw",
-        "camera2": "joined_cams/usb_cam2/image_raw",
-        "publish": "joined_cams/joined_image",
+        "camera1": "/joined_cams/usb_cam1/image_mono",
+        "camera2": "/joined_cams/usb_cam2/image_mono",
+        "publish": "joined_image",
         "queue_size": 10,
         "encoding": 'bgr8',
         "verbose": False,
-        "joinType": 1,
+        "join_type": 1,
         "left_y_offset": 20,
         "right_y_offset": 0,
         "left_x_offset": 0,
@@ -66,15 +105,22 @@ class CameraJoin(object):
         "stitchter_type": cv2.Stitcher_PANORAMA,
         "direct_import": False,
         "direct_import_sources": (0,2),
-        "timing": False
+        "timing": False,
+        "ros_log": False,
+        "console_log": False
     }
     
     
     def __init__(self,dict):
+        try:
+            self.l = Logger(ros_log=dict["ros_log"], console_log=dict["console_log"])
+        except:
+            Logger(True, True).self.l.fail("Failed to initialize Logger, exiting")
+            exit(1)
         for k,v in dict.items():
             if k in CameraJoin.default_list:
                 continue
-            else: print("Not recognized key ", k, " and value ", v)
+            else: self.l.warning("Not recognized key ", k, " and value ", v)
         for k,v in CameraJoin.default_list.items():
             if k in dict:
                 continue
@@ -93,11 +139,21 @@ class CameraJoin(object):
             rospy.Subscriber(dict["camera1"], Image, self.image1_callback)
             rospy.Subscriber(dict["camera2"], Image, self.image2_callback)
             self.thread = threading.Thread(target= self.ros_loop)
+            self.thread.start()
         else:
-            print("initializing direct import")
-            self.cam1 = cv2.VideoCapture(dict["direct_import_sources"][0])
-            self.cam2 = cv2.VideoCapture(dict["direct_import_sources"][1])
-            
+            self.l.passing("initializing direct import")
+            try:
+                self.cam1 = cv2.VideoCapture(dict["direct_import_sources"][0])
+                if not self.cam1.isOpened():
+                    raise Exception("Unable to open Cam1")
+                self.cam2 = cv2.VideoCapture(dict["direct_import_sources"][1])
+                if not self.cam2.isOpened():
+                    raise Exception("Unable to open Cam2")
+                
+            except Exception as e:
+                self.l.fail("Couldn't initialize cameras, exiting! Are they used by another Process?")
+                rospy.signal_shutdown("Couldn't initialize cameras, exiting! Are they used by another Process?")
+                raise e
             self.thread = threading.Thread(target = self.direct_import_loop)
             self.thread.start()
             
@@ -106,17 +162,17 @@ class CameraJoin(object):
 
     
     def direct_import_loop(self):
-        print("Direct import started")
+        self.l.passing("Direct import started")
         while not rospy.is_shutdown():
             if self.timing:
                 self.times[0] = t.time()
             ret1, self.image1 = self.cam1.read()
             if not ret1 == True: 
-                warnings.warn("couldn't fetch frame from cam1")
+                self.l.fail("couldn't fetch frame from cam1")
                 continue
             ret2, self.image2 = self.cam2.read()
             if not ret2 == True: 
-                warnings.warn("couldn't fetch frame from cam2")
+                self.l.fail("couldn't fetch frame from cam2")
                 continue
             if self.timing:
                 print("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
@@ -141,7 +197,7 @@ class CameraJoin(object):
         self.set_image(msg, 2)
 
     def loop(self):
-        print("Starting Loop...")
+        self.l.passing("Starting Loop...")
 
         rospy.spin()
     
@@ -153,7 +209,7 @@ class CameraJoin(object):
     def set_image(self, image, number):
         try:
             if not isinstance(image, Image):
-                print("Input image is not of type sensor_msgs/Image")
+                self.l.fail("Input image is not of type sensor_msgs/Image")
             if self.timing:
                 start_set = t.time()
         
@@ -204,7 +260,7 @@ class CameraJoin(object):
                     self.image_joined = self.stitcher.blending(self.image1, self.image2)
                 except Exception as e:
                     if self.VERBOSE:
-                        print(e, "\n Stale image will be used")
+                        self.l.warning(e,"\n Stale image will be used")
                     self.image_joined = old_image
                 if self.timing:
                     end_blending = t.time()
@@ -216,9 +272,16 @@ class CameraJoin(object):
                 
             except Exception as e :
                 print(e)
-        elif self.VERBOSE:
+        elif self.VERBOSE and self.image1 is None and self.image2 is None:
+            print("Both Images are None")
+        elif self.VERBOSE and self.image1 is None:
             
-            print("At least one Image is None")
+            print("Image 1 is None")
+        elif self.VERBOSE and self.image2 is None:
+            
+            print("Image 2 is None")
+        elif self.VERBOSE:
+            l.info("How did we get here?")
 
     
     def publish_image(self,image_joined):
@@ -237,45 +300,59 @@ class CameraJoin(object):
 
 
 if __name__ == '__main__':
-
-   
+    runtime_list = dict()
+    runtime_list.update({"join_type": 2})
+    runtime_list.update({"verbose":True})
+    runtime_list.update({"direct_import": False})
+    runtime_list.update({"static_matrix": True})
+    runtime_list.update({"timing":False})
+    runtime_list.update({"console_log":True})
+    l = Logger(False, runtime_list["console_log"])
     value_list = dict()
     for k, v in CameraJoin.param_list.items():
         value_list.update({k: None})
     # ROS Image message -> OpenCV2 image converter
     from cv_bridge import CvBridge, CvBridgeError
-    rospy.init_node('camera_join', anonymous=True, log_level=rospy.DEBUG)
-    print("Starting Node, Fetching params")
+    name = 'camera_join' #TODO find a way to make this variable
+    rospy.init_node(name, anonymous=True, log_level=rospy.DEBUG)
+    l.passing("Starting Node, Fetching params")
     runtime_list = dict()
-    runtime_list.update({"joinType": 2})
+    runtime_list.update({"join_type": 2})
     runtime_list.update({"verbose":True})
     runtime_list.update({"direct_import": False})
     runtime_list.update({"static_matrix": True})
     runtime_list.update({"timing":False})
+    runtime_list.update({"console_log":True})
+    print("Available Params:")
+    for i in rospy.get_param_names():
+        if "camera_join" in i:
+            print(i)
+            if not any(True for k in CameraJoin.default_list if k in i):
+                l.warning("Param {} was not recognized as a valid parameter and will be ignored!".format(i))
     try:
         for k,v in CameraJoin.param_list.items():
-            if rospy.has_param(v):
+            if rospy.has_param(v): #not using the built in default values of rospy for better verbosity
                 value_list.update({k: rospy.get_param(v)})
-                print("Parameter ", v, "has been found and added" )
-                continue
+                l.passing("Parameter {} has been found and added".format(v.replace('~', '')) )
+                
             elif k in runtime_list:
                 value_list.update({k: runtime_list[k]})
-                print("Parameter", v , "has been found in Runtime list, and will be used")
-                continue
+                l.passingblue("Parameter {} has been found in Runtime list and will be used".format(v.replace('~', '')))
+                
             
             else: 
                 value_list.update({k: CameraJoin.default_list[k]})
-                print("Parameter ", v, "has not been found, using default" )
-                continue
-        else: 
-            my_subs = CameraJoin(value_list)
-            print("Node started with given Params")
-            my_subs.loop()
-            
+                l.warning("Parameter {} has not been found, using default".format(v.replace('~', '')) )
+               
+
+        my_subs = CameraJoin(value_list)
+        l.passing("Node started with given Params")
+        my_subs.loop()
+        
     except KeyError:
-        print("Fetching Params failed, using default params")
+        l.warning("Fetching Params failed, using default params")
         my_subs = CameraJoin(value_list)
         my_subs.loop()
     except:
-        warnings.warn("Couldn't start Node, is Cam1 the right one?")
+        l.fail("Couldn't start Node, is Cam1 the right one?")
         traceback.print_exc()

@@ -1,0 +1,24 @@
+<launch>
+
+  <node pkg="camera_tests" type="camera_join.py" name="camera_join" output="screen">
+    <param name = "camera1" value = "/joined_cams/usb_cam1/image_raw"/>
+    <param name = "publish" value = "joined_image/image_raw"/>
+    <param name = "queue_size" value = "10"/>
+    <param name = "verbose" value = "True"/>
+    <param name = "encoding" value = "bgr8"/>
+    <param name = "join_type" value = "1"/>
+    <param name = "ratio" value = "0.85"/>
+    <param name = "min_match" value = "10"/>
+    <param name = "smoothing_window_size" value = "200"/>
+    <param name = "matching_write" value = "False"/>
+    <param name = "static_matrix" value = "True"/>
+    <param name = "static_mask" value = "False"/>
+    <param name = "direct_import" value = "False"/>
+  </node>
+
+ 
+   
+    
+
+
+</launch>

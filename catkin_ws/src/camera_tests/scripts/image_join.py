@@ -20,7 +20,7 @@ class ImageJoinFactory():
         "queue_size": 10,
         "encoding": 'bgr8',
         "verbose": False,
-        "joinType": 1,
+        "join_type": 1,
         "left_y_offset": 20,
         "right_y_offset": 0,
         "left_x_offset": 0,
@@ -42,7 +42,7 @@ class ImageJoinFactory():
             if k in dict:
                 continue
             else: dict.update({k:v})
-        joinType = dict["joinType"]
+        joinType = dict["join_type"]
         if joinType == 1:
             return ImageJoinHConcat(dict["left_y_offset"],
                                     dict["right_y_offset"],
