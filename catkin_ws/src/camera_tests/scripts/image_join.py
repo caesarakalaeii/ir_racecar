@@ -99,9 +99,14 @@ class ImageJoinFeature(ImageJoin):
         self.min_match=min_match
         try:
             self.sift=cv2.SIFT_create() #maybe replace wir ORB or AKAZE
-        except:
+        except AttributeError:
             #for older versions of open cv
-            self.sift=cv2.xfeatures2d.SIFT_create()
+            try:
+                self.sift=cv2.xfeatures2d.SIFT_create()
+            except AttributeError:
+                print("Unsupported CV version, exiting")
+                exit(1)
+        
         self.smoothing_window_size=smoothing_window_size
         self.matching_write = matching_write
         self.static_matrix = static_matrix
