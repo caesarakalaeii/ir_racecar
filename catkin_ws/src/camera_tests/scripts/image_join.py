@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import parameters as p
 
 
 
@@ -13,32 +14,10 @@ class ImageJoin(object):
         pass
 
 class ImageJoinFactory():
-    default_list = {
-        "camera1": "joined_cams/usb_cam1/image_raw",
-        "camera2": "joined_cams/usb_cam2/image_raw",
-        "publish": "joined_image/image_raw",
-        "queue_size": 10,
-        "encoding": 'bgr8',
-        "verbose": False,
-        "join_type": 1,
-        "left_y_offset": 20,
-        "right_y_offset": 0,
-        "left_x_offset": 0,
-        "right_x_offset": 0,
-        "ratio": 0.85,
-        "min_match": 10,
-        "smoothing_window_size": 50,
-        "matching_write": False,
-        "static_matrix": False,
-        "static_mask": False,
-        "stitchter_type": cv2.Stitcher_PANORAMA,
-        "direct_import": False,
-        "direct_import_sources": (0,2)
-    }
     
 
     def create_instance(dict):
-        for k, v in ImageJoinFactory.default_list.items():
+        for k, v in p.default_list.items():
             if k in dict:
                 continue
             else: dict.update({k:v})
@@ -390,26 +369,25 @@ class ImageJoinOpenCVCuda(ImageJoin):
         self.min_match = min_match
         self.stitcher_type = stitcher_type
         self.smoothing_window_size = smoothing_window_size
+        # Enable CUDA
+        cv2.cuda.setDevice(0)
+
+        # Create CUDA-based stitcher
+        self.stitcher = cv2.cuda.createStitcher(self.stitcher_type)
         super().__init__()
 
     def blending(self, img1, img2):
         img = []
         img.append(img1)
         img.append(img2)
-
-        # Enable CUDA
-        cv2.cuda.setDevice(0)
-
-        # Create CUDA-based stitcher
-        stitcher = cv2.cuda.createStitcher(self.stitcher_type)
-
+        
         # Upload images to GPU
         gpu_imgs = [cv2.cuda_GpuMat() for _ in range(len(img))]
         for i in range(len(img)):
             gpu_imgs[i].upload(img[i])
 
         # Stitch images using CUDA
-        status, result = stitcher.stitch(gpu_imgs)
+        status, result = self.stitcher.stitch(gpu_imgs)
 
         if status == cv2.Stitcher_OK:
             # Download result from GPU

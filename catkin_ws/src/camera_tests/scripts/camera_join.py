@@ -11,10 +11,10 @@ try:
     from sensor_msgs.msg import Image
     import numpy as np
     import cv2
-    import warnings
     import threading
     import traceback
     import time as t
+    import parameters as p
 except:
     raise ImportError("Imports failed")
 class Logger():
@@ -57,58 +57,8 @@ class Logger():
             rospy.loginfo(skk)
 
 class CameraJoin(object):
-    #~ indicates a private parameter and will adjust to the envs namespace
-    param_list = {
-        "camera1": "~camera1",
-        "camera2": "~camera2",
-        "publish": "~publish",
-        "queue_size": "~queue_size",
-        "verbose": "~verbose",
-        "encoding": "~encoding",
-        "join_type": "~join_type",
-        "left_y_offset": "~left_y_offset",
-        "right_y_offset": "~right_y_offset",
-        "left_x_offset": "~left_x_offset",
-        "right_x_offset": "~right_x_offset",
-        "ratio": "~ratio",
-        "min_match": "~min_match",
-        "smoothing_window_size": "~smoothing_window_size",
-        "matching_write": "~matching_write",
-        "static_matrix": "~static_matrix",
-        "static_mask": "~static_mask",
-        "stitchter_type": "~stitchter_type",
-        "direct_import": "~direct_import",
-        "direct_import_sources": "~direct_import_sources",
-        "timing": "~timing",
-        "ros_log": "~ros_log",
-        "console_log": "~console_log"
-    }
-
-    default_list = {
-        "camera1": "/joined_cams/usb_cam1/image_mono",
-        "camera2": "/joined_cams/usb_cam2/image_mono",
-        "publish": "joined_image",
-        "queue_size": 10,
-        "encoding": 'bgr8',
-        "verbose": False,
-        "join_type": 1,
-        "left_y_offset": 20,
-        "right_y_offset": 0,
-        "left_x_offset": 0,
-        "right_x_offset": 0,
-        "ratio": 0.85,
-        "min_match": 10,
-        "smoothing_window_size": 50,
-        "matching_write": False,
-        "static_matrix": False,
-        "static_mask": False,
-        "stitchter_type": cv2.Stitcher_PANORAMA,
-        "direct_import": False,
-        "direct_import_sources": (0,2),
-        "timing": False,
-        "ros_log": False,
-        "console_log": False
-    }
+    
+    
     
     
     def __init__(self,dict):
@@ -118,10 +68,10 @@ class CameraJoin(object):
             Logger(True, True).self.l.fail("Failed to initialize Logger, exiting")
             exit(1)
         for k,v in dict.items():
-            if k in CameraJoin.default_list:
+            if k in p.default_list:
                 continue
             else: self.l.warning("Not recognized key ", k, " and value ", v)
-        for k,v in CameraJoin.default_list.items():
+        for k,v in p.default_list.items():
             if k in dict:
                 continue
             else: dict.update({k:v})
@@ -309,7 +259,7 @@ if __name__ == '__main__':
     runtime_list.update({"console_log":True})
     
     l = Logger(False, runtime_list["console_log"])
-    value_list = CameraJoin.param_list
+    value_list = p.param_list
     # ROS Image message -> OpenCV2 image converter
     from cv_bridge import CvBridge, CvBridgeError
     name = 'camera_join' #TODO find a way to make this variable
@@ -330,17 +280,17 @@ if __name__ == '__main__':
     for i in param_names:
         if "camera_join" in i:
             print(i)
-            if not any(True for k in CameraJoin.default_list if k in i):
+            if not any(True for k in p.default_list if k in i):
                 l.warning("Param {} was not recognized as a valid parameter and will be ignored!".format(i))
     
-    if not any(True for i in param_names if i in CameraJoin.param_list.keys()) and simulate_params:
-            for k,v in CameraJoin.param_list.items():
+    if not any(True for i in param_names if i in p.param_list.keys()) and simulate_params:
+            for k,v in p.param_list.items():
                 try:
                     rospy.set_param(v, runtime_list[k])
                 except KeyError:
-                    rospy.set_param(v, CameraJoin.default_list[k])
+                    rospy.set_param(v, p.default_list[k])
     try:
-        for k,v in CameraJoin.param_list.items():
+        for k,v in p.param_list.items():
             if rospy.has_param(v): #not using the built in default values of rospy for better verbosity
                 value_list.update({k: rospy.get_param(v)})
                 l.passing("Parameter {} has been found and added".format(v.replace('~', '')) )
@@ -351,7 +301,7 @@ if __name__ == '__main__':
                 
             
             else: 
-                value_list.update({k: CameraJoin.default_list[k]})
+                value_list.update({k: p.default_list[k]})
                 l.warning("Parameter {} has not been found, using default".format(v.replace('~', '')) )
                
 
