@@ -1,14 +1,24 @@
 import cv2
 import image_join as join
 import traceback
+import parameters as p
 
 
 
 if __name__ == "__main__":
-    
+    runtime_list = dict()
+    runtime_list.update({"join_type": 2})
+    runtime_list.update({"verbose":True})
+    runtime_list.update({"direct_import": False})
+    runtime_list.update({"static_matrix": True})
+    runtime_list.update({"timing":False})
+    runtime_list.update({"console_log":True})
+    for k,v in p.default_list.items():
+        if not k in runtime_list.keys():
+            runtime_list.update({k:v})
     cam1 = cv2.VideoCapture(0)
     cam2 = cv2.VideoCapture(2)
-    joiner = join.ImageJoinFactory.create_instance(joinType=2, min_match=20, ratio= 0.85, smoothing_window_size=200, static_matrix=True)
+    joiner = join.ImageJoinFactory.create_instance(runtime_list)
     
     while True:
         

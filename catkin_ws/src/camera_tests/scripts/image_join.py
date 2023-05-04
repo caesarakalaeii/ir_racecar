@@ -97,7 +97,11 @@ class ImageJoinFeature(ImageJoin):
     def __init__(self, ratio=0.85, min_match=10, smoothing_window_size=50, matching_write = False, static_matrix = False, static_mask = False ) :
         self.ratio=ratio
         self.min_match=min_match
-        self.sift=cv2.SIFT_create() #maybe replace wir ORB or AKAZE
+        try:
+            self.sift=cv2.SIFT_create() #maybe replace wir ORB or AKAZE
+        except:
+            #for older versions of open cv
+            self.sift=cv2.SIFT()
         self.smoothing_window_size=smoothing_window_size
         self.matching_write = matching_write
         self.static_matrix = static_matrix
