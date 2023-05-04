@@ -23,7 +23,8 @@ param_list = {
         "direct_import_sources": "~direct_import_sources",
         "timing": "~timing",
         "ros_log": "~ros_log",
-        "console_log": "~console_log"
+        "console_log": "~console_log",
+        "cuda_device": "~cuda_device"
     }
 
 default_list = {
@@ -49,5 +50,6 @@ default_list = {
         "direct_import_sources": (0,2),
         "timing": False,
         "ros_log": False,
-        "console_log": False
+        "console_log": False,
+        "cuda_device": 0
     }
