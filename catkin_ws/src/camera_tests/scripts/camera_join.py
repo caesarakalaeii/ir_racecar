@@ -260,7 +260,7 @@ class CameraJoin(object):
                     self.image_joined = self.stitcher.blending(self.image1, self.image2)
                 except Exception as e:
                     if self.VERBOSE:
-                        self.l.warning(e,"\n Stale image will be used")
+                        self.l.warning("Stale image will be used: {}".format(e))
                     self.image_joined = old_image
                 if self.timing:
                     end_blending = t.time()

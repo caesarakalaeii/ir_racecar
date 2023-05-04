@@ -26,7 +26,7 @@
     <param name = "queue_size" value = "10"/>
     <param name = "verbose" value = "True"/>
     <param name = "encoding" value = "bgr8"/>
-    <param name = "join_type" value = "2"/>
+    <param name = "join_type" value = "5"/>
     <param name = "ratio" value = "0.85"/>
     <param name = "min_match" value = "10"/>
     <param name = "smoothing_window_size" value = "200"/>
@@ -34,6 +34,7 @@
     <param name = "static_matrix" value = "True"/>
     <param name = "static_mask" value = "False"/>
     <param name = "direct_import" value = "False"/>
+    <param name = "timing" value = "True"/>
   </node>
 
   <node pkg="image_proc" type="image_proc" name="image_proc1" ns="usb_cam1" >
