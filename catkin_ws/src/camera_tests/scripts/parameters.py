@@ -1,0 +1,53 @@
+import cv2
+#~ indicates a private parameter and will adjust to the namespace
+param_list = {
+        "camera1": "~camera1",
+        "camera2": "~camera2",
+        "publish": "~publish",
+        "queue_size": "~queue_size",
+        "verbose": "~verbose",
+        "encoding": "~encoding",
+        "join_type": "~join_type",
+        "left_y_offset": "~left_y_offset",
+        "right_y_offset": "~right_y_offset",
+        "left_x_offset": "~left_x_offset",
+        "right_x_offset": "~right_x_offset",
+        "ratio": "~ratio",
+        "min_match": "~min_match",
+        "smoothing_window_size": "~smoothing_window_size",
+        "matching_write": "~matching_write",
+        "static_matrix": "~static_matrix",
+        "static_mask": "~static_mask",
+        "stitchter_type": "~stitchter_type",
+        "direct_import": "~direct_import",
+        "direct_import_sources": "~direct_import_sources",
+        "timing": "~timing",
+        "ros_log": "~ros_log",
+        "console_log": "~console_log"
+    }
+
+default_list = {
+        "camera1": "/joined_cams/usb_cam1/image_mono",
+        "camera2": "/joined_cams/usb_cam2/image_mono",
+        "publish": "joined_image",
+        "queue_size": 10,
+        "encoding": 'bgr8',
+        "verbose": False,
+        "join_type": 1,
+        "left_y_offset": 20,
+        "right_y_offset": 0,
+        "left_x_offset": 0,
+        "right_x_offset": 0,
+        "ratio": 0.85,
+        "min_match": 10,
+        "smoothing_window_size": 50,
+        "matching_write": False,
+        "static_matrix": False,
+        "static_mask": False,
+        "stitchter_type": cv2.Stitcher_PANORAMA,
+        "direct_import": False,
+        "direct_import_sources": (0,2),
+        "timing": False,
+        "ros_log": False,
+        "console_log": False
+    }
