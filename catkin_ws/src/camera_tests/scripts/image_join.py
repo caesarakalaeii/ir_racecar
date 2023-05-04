@@ -50,7 +50,8 @@ class ImageJoinFactory():
             return ImageJoinOpenCVCuda(dict["ratio"],
                                    dict["min_match"],
                                    dict["smoothing_window_size"],
-                                   dict["stitchter_type"])
+                                   dict["stitchter_type"],
+                                   dict["cuda_device"])
         else:
             raise ValueError("JoinType not known, please use either CONCAT = 1, FEATURE = 2, OPENCV = 3, FEATURE_CUDA = 4, OPENCV_CUDA = 5")
 
@@ -364,13 +365,13 @@ def blending_no_reg(self, img1, img2, H):
 import cv2
 
 class ImageJoinOpenCVCuda(ImageJoin):
-    def __init__(self, ratio=0.5, min_match=3, smoothing_window_size=10, stitcher_type=cv2.Stitcher_PANORAMA):
+    def __init__(self, ratio=0.5, min_match=3, smoothing_window_size=10, stitcher_type=cv2.Stitcher_PANORAMA, cuda_device = 0):
         self.ratio = ratio
         self.min_match = min_match
         self.stitcher_type = stitcher_type
         self.smoothing_window_size = smoothing_window_size
         # Enable CUDA
-        cv2.cuda.setDevice(0)
+        cv2.cuda.setDevice(cuda_device)
 
         # Create CUDA-based stitcher
         self.stitcher = cv2.cuda.createStitcher(self.stitcher_type)
@@ -380,7 +381,7 @@ class ImageJoinOpenCVCuda(ImageJoin):
         img = []
         img.append(img1)
         img.append(img2)
-        
+
         # Upload images to GPU
         gpu_imgs = [cv2.cuda_GpuMat() for _ in range(len(img))]
         for i in range(len(img)):
