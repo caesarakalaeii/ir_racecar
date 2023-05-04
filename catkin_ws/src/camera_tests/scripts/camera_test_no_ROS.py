@@ -29,9 +29,12 @@ if __name__ == "__main__":
             break
         
         try:
-            ret, frame1 = cam1.read()
+            
+            a, frame1 = cam1.read()
             #frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
-            ret, frame2 = cam2.read()
+            b, frame2 = cam2.read()
+            if a == False or b == False:
+                raise Exception("Couldnt open Cameras")
             #frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
             cv2.imshow("Cam1", frame1)
             cv2.imshow("Cam2", frame2)
