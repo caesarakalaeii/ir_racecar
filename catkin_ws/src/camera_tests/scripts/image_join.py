@@ -101,7 +101,7 @@ class ImageJoinFeature(ImageJoin):
             self.sift=cv2.SIFT_create() #maybe replace wir ORB or AKAZE
         except:
             #for older versions of open cv
-            self.sift=cv2.SIFT()
+            self.sift=cv2.xfeatures2d.SIFT_create()
         self.smoothing_window_size=smoothing_window_size
         self.matching_write = matching_write
         self.static_matrix = static_matrix
