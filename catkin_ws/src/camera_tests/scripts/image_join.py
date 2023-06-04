@@ -2,7 +2,7 @@ from __future__ import print_function
 import numpy as np
 from collections import OrderedDict
 import cv2 as cv
-import parameters as p
+from parameters import default_list
 
 
 
@@ -18,31 +18,31 @@ class ImageJoin(object):
 class ImageJoinFactory():
     
 
-    def create_instance(dict):
-        for k, v in p.default_list.items():
-            if k in dict:
+    def create_instance(arg_dict):
+        for k, v in default_list.items():
+            if k in arg_dict:
                 continue
-            else: dict.update({k:v["default"]})
-        joinType = self.arg_dict["join_type"]
+            else: arg_dict.update({k:v["default"]})
+        joinType = arg_dict["join_type"]
         if joinType == 1:
-            return ImageJoinHConcat(self.arg_dict["left_y_offset"],
-                                    self.arg_dict["right_y_offset"],
-                                    self.arg_dict["left_x_offset"],
-                                    self.arg_dict["right_x_offset"])
+            return ImageJoinHConcat(arg_dict["left_y_offset"],
+                                    arg_dict["right_y_offset"],
+                                    arg_dict["left_x_offset"],
+                                    arg_dict["right_x_offset"])
         elif joinType == 2:
-            return ImageJoinFeature(self.arg_dict["ratio"],
-                                    self.arg_dict["min_match"],
-                                    self.arg_dict["smoothing_window_size"],
-                                    self.arg_dict["matching_write"],
-                                    self.arg_dict["static_matrix"],
-                                    self.arg_dict["static_mask"])
+            return ImageJoinFeature(arg_dict["ratio"],
+                                    arg_dict["min_match"],
+                                    arg_dict["smoothing_window_size"],
+                                    arg_dict["matching_write"],
+                                    arg_dict["static_matrix"],
+                                    arg_dict["static_mask"])
         elif joinType == 3:
-            return ImageJoinOpenCV(self.arg_dict["ratio"],
-                                   self.arg_dict["min_match"],
-                                   self.arg_dict["smoothing_window_size"],
-                                   self.arg_dict["stitchter_type"])
+            return ImageJoinOpenCV(arg_dict["ratio"],
+                                   arg_dict["min_match"],
+                                   arg_dict["smoothing_window_size"],
+                                   arg_dict["stitchter_type"])
         elif joinType == 4:
-            return ImageJoinCuda(dict)
+            return ImageJoinCuda(arg_dict)
         
         else:
             raise ValueError("JoinType not known, please use either CONCAT = 1, FEATURE = 2, OPENCV = 3, CUDA = 4")
@@ -240,7 +240,7 @@ class ImageJoinOpenCV(ImageJoin):
 class ImageJoinCuda(ImageJoin):
     
     
-    def __init__(self, args):
+    def __init__(self, arg_dict):
         self.EXPOS_COMP_CHOICES = OrderedDict()
         self.EXPOS_COMP_CHOICES['gain_blocks'] = cv.detail.ExposureCompensator_GAIN_BLOCKS
         self.EXPOS_COMP_CHOICES['gain'] = cv.detail.ExposureCompensator_GAIN
@@ -313,9 +313,10 @@ class ImageJoinCuda(ImageJoin):
 
         self.BLEND_CHOICES = ('multiband', 'feather', 'no',)
         
-        for k,v in p.default_cuda_join.items():
-            args.update({k:v})
-        self.arg_dict = args
+        for k,v in default_list.items():
+            if not k in arg_dict:
+                arg_dict.update({k:v["default"]})
+        self.arg_dict = arg_dict
             
         super().__init__()
 
@@ -335,7 +336,7 @@ class ImageJoinCuda(ImageJoin):
         blend_type = self.arg_dict["blend"]
         blend_strength = self.arg_dict["blend_strength"]
         result_name = self.arg_dict["output"]
-        if self.arg_dict["timelapse"] is not None:
+        if self.arg_dict["timelapse"]:
             timelapse = True
             if self.arg_dict["timelapse"] == "as_is":
                 timelapse_type = cv.detail.Timelapser_AS_IS
@@ -358,10 +359,10 @@ class ImageJoinCuda(ImageJoin):
         i=0
         for frame in frames:
             full_img = frame
-            img_names.append("img%d"%i) #simulate existence of file names
+            img_names.append("Frame %d"%i) #simulate existence of file names
             i+=1
             if full_img is None:
-                print("Cannot read image ", name)
+                print("Cannot read Frame ", name)
                 exit()
             full_img_sizes.append((full_img.shape[1], full_img.shape[0]))
             if work_megapix < 0:
@@ -406,14 +407,12 @@ class ImageJoinCuda(ImageJoin):
         full_img_sizes = full_img_sizes_subset
         num_images = len(frames)
         if num_images < 2:
-            print("Need more images")
-            exit()
+            raise AttributeError ("Need more images")
 
         estimator = self.ESTIMATOR_CHOICES[self.arg_dict["estimator"]]()
         b, cameras = estimator.apply(features, p, None)
         if not b:
-            print("Homography estimation failed.")
-            exit()
+            raise AssertionError("Homography estimation failed.")
         for cam in cameras:
             cam.R = cam.R.astype(np.float32)
 
@@ -433,8 +432,7 @@ class ImageJoinCuda(ImageJoin):
         adjuster.setRefinementMask(refine_mask)
         b, cameras = adjuster.apply(features, p, cameras)
         if not b:
-            print("Camera parameters adjusting failed.")
-            exit()
+            raise AssertionError("Camera parameters adjusting failed.")
         focals = []
         for cam in cameras:
             focals.append(cam.focal)
@@ -491,7 +489,7 @@ class ImageJoinCuda(ImageJoin):
         timelapser = None
         # https://github.com/opencv/opencv/blob/4.x/samples/cpp/stitching_detailed.cpp#L725 ?
         for idx, name in enumerate(img_names):
-            full_img = cv.imread(name)
+            full_img = frame
             if not is_compose_scale_set:
                 if compose_megapix > 0:
                     compose_scale = min(1.0, np.sqrt(compose_megapix * 1e6 / (full_img.shape[0] * full_img.shape[1])))

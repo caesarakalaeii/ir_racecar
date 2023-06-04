@@ -19,13 +19,30 @@ def list_ports():
             w = camera.get(3)
             h = camera.get(4)
             if is_reading:
+                
                 print("Port %s is working and reads images (%s x %s)" %(dev_port,h,w))
                 working_ports.append(dev_port)
             else:
                 print("Port %s for camera ( %s x %s) is present but does not reads." %(dev_port,h,w))
                 available_ports.append(dev_port)
         dev_port +=1
+    
     return available_ports,working_ports,non_working_ports
 
+def loop_ports(ports):
+     while True:
+        k = cv2.waitKey(1)
+        if k%256 == 27:
+            # ESC pressed
+            print("Escape hit, closing...")
+            break
+        
+        for i in ports:
+            cam = cv2.VideoCapture(i) 
+            a, frame1 = cam.read()
+            cv2.imshow("Port %s"%i, frame1)
+       
+
 if __name__ == '__main__':
-    print(list_ports())
+    a,w,n = list_ports()
+    loop_ports(w)

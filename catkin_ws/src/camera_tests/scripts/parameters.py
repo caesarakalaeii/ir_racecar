@@ -1,5 +1,5 @@
 import cv2
-import cuda_join
+
 #~ indicates a private parameter and will adjust to the namespace
 
 default_list = {
@@ -119,7 +119,7 @@ default_list = {
             },
         "estimator": {
             "ros_param": "~estimator",
-            "default": "homograpy" #other choice is affine
+            "default": "homography" #other choice is affine
             },
         "match_conf": {
             "ros_param": "~match_conf",
@@ -131,7 +131,7 @@ default_list = {
             },
         "ba": {
             "ros_param": "~ba",
-            "default": list(cuda_join.BA_COST_CHOICES.keys())[0]
+            "default": 'ray' # other : 'reproj','affine','no'
             },
         "ba_refine_mask": {
             "ros_param": "~ba_refine_mask",
@@ -139,7 +139,7 @@ default_list = {
             },
         "wave_correct": {
             "ros_param": "~wave_correct",
-            "default": list(cuda_join.WAVE_CORRECT_CHOICES.keys())[0]
+            "default": "horiz" #other : "vert", "no"
             },
         "save_graph": {
             "ros_param": "~save_graph",
@@ -147,7 +147,7 @@ default_list = {
             },
         "warp": {
             "ros_param": "~warp",
-            "default": cuda_join.WARP_CHOICES[0]
+            "default": "plane" #WARP_CHOICES = ('spherical','plane','affine','cylindrical','fisheye','stereographic','compressedPlaneA2B1','compressedPlaneA1.5B1','compressedPlanePortraitA2B1','compressedPlanePortraitA1.5B1','paniniA2B1','paniniA1.5B1','paniniPortraitA2B1','paniniPortraitA1.5B1','mercator','transverseMercator'
             },
         "seam_megapix": {
             "ros_param": "~seam_megapix",
@@ -155,7 +155,7 @@ default_list = {
             },
         "seam": {
             "ros_param": "~seam",
-            "default": list(cuda_join.SEAM_FIND_CHOICES.keys())[0]
+            "default": 'gc_color' #'gc_color','gc_colorgrad','dp_color','dp_colorgrad','voronoi','no'
             },
         "compose_megapix": {
             "ros_param": "~compose_megapix",
@@ -163,7 +163,7 @@ default_list = {
             },
         "expos_comp": {
             "ros_param": "~expos_comp",
-            "default": list(cuda_join.EXPOS_COMP_CHOICES.keys())[0]
+            "default": 'gain_blocks' # other :'gain','channel','channel_blocks','no'
             },
         "expos_comp_nr_feeds": {
             "ros_param": "~expos_comp_nr_feeds",
@@ -179,7 +179,7 @@ default_list = {
             },
         "blend": {
             "ros_param": "~blend",
-            "default": cuda_join.BLEND_CHOICES[0]
+            "default": 'multiband' # other: 'feather', 'no'
             },
         "blend_strength": {
             "ros_param": "~blend_strength",
@@ -187,7 +187,7 @@ default_list = {
             },
         "output": {
             "ros_param": "~output",
-            "default": "result.jpg"
+            "default": "result.jpg" #left over from stiching detailed, may be removed later
             },
         "timelapse": {
             "ros_param": "~timelapse",
