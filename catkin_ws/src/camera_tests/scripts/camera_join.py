@@ -14,7 +14,7 @@ try:
     import threading
     import traceback
     import time as t
-    import parameters as p
+    from parameters import default_list
 except:
     raise ImportError("Imports failed")
 class Logger():
@@ -57,10 +57,6 @@ class Logger():
             rospy.loginfo(skk)
 
 class CameraJoin(object):
-    
-    
-    
-    
     def __init__(self,dict):
         try:
             self.l = Logger(ros_log=dict["ros_log"], console_log=dict["console_log"])
@@ -68,13 +64,13 @@ class CameraJoin(object):
             Logger(True, True).self.l.fail("Failed to initialize Logger, exiting")
             exit(1)
         for k,v in dict.items():
-            if k in p.default_list:
+            if k in default_list:
                 continue
             else: self.l.warning("Not recognized key ", k, " and value ", v)
-        for k,v in p.default_list.items():
+        for k,v in default_list.items():
             if k in dict:
                 continue
-            else: dict.update({k:v})
+            else: dict.update({k:v["default"]})
         self.times = [0,0]
         self.image1 = None
         self.image2 = None
@@ -259,19 +255,14 @@ if __name__ == '__main__':
     runtime_list.update({"console_log":True})
     
     l = Logger(False, runtime_list["console_log"])
-    value_list = p.param_list
+    value_list = dict() #used to store values from ros parameters
+    for k,v in default_list:
+        value_list.update({k:v["default"]})
     # ROS Image message -> OpenCV2 image converter
     from cv_bridge import CvBridge, CvBridgeError
     name = 'camera_join' #TODO find a way to make this variable
     rospy.init_node(name, anonymous=True, log_level=rospy.DEBUG)
     l.passing("Starting Node, Fetching params")
-    runtime_list = dict()
-    runtime_list.update({"join_type": 2})
-    runtime_list.update({"verbose":True})
-    runtime_list.update({"direct_import": False})
-    runtime_list.update({"static_matrix": True})
-    runtime_list.update({"timing":False})
-    runtime_list.update({"console_log":True})
     simulate_params = False
     if simulate_params:
         l.warning("Simulating set Parameters, if not launched from a .launch file")
@@ -280,29 +271,29 @@ if __name__ == '__main__':
     for i in param_names:
         if "camera_join" in i:
             print(i)
-            if not any(True for k in p.default_list if k in i):
+            if not any(True for k in default_list if k in i):
                 l.warning("Param {} was not recognized as a valid parameter and will be ignored!".format(i))
     
-    if not any(True for i in param_names if i in p.param_list.keys()) and simulate_params:
-            for k,v in p.param_list.items():
+    if not any(True for i in param_names if i in default_list.keys()) and simulate_params:
+            for k,v in default_list.items():
                 try:
-                    rospy.set_param(v, runtime_list[k])
+                    rospy.set_param(v["ros_param"], runtime_list[k])
                 except KeyError:
-                    rospy.set_param(v, p.default_list[k])
+                    rospy.set_param(v["ros_param"], v["default"])
     try:
-        for k,v in p.param_list.items():
-            if rospy.has_param(v): #not using the built in default values of rospy for better verbosity
-                value_list.update({k: rospy.get_param(v)})
-                l.passing("Parameter {} has been found and added".format(v.replace('~', '')) )
+        for k,v in default_list.items():
+            if rospy.has_param(v["ros_param"]): #not using the built in default values of rospy for better verbosity
+                value_list.update({k: rospy.get_param(v["ros_param"])})
+                l.passing("Parameter {} has been found and added".format(v["ros_param"].replace('~', '')) )
                 
             elif k in runtime_list:
                 value_list.update({k: runtime_list[k]})
-                l.passingblue("Parameter {} has been found in Runtime list and will be used".format(v.replace('~', '')))
+                l.passingblue("Parameter {} has been found in Runtime list and will be used".format(v["ros_param"].replace('~', '')))
                 
             
             else: 
-                value_list.update({k: p.default_list[k]})
-                l.warning("Parameter {} has not been found, using default".format(v.replace('~', '')) )
+                value_list.update({k: default_list[k]})
+                l.warning("Parameter {} has not been found, using default".format(v["ros_param"].replace('~', '')) )
                
 
         my_subs = CameraJoin(value_list)

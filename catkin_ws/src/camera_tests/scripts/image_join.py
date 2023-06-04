@@ -22,7 +22,7 @@ class ImageJoinFactory():
         for k, v in p.default_list.items():
             if k in dict:
                 continue
-            else: dict.update({k:v})
+            else: dict.update({k:v["default"]})
         joinType = dict["join_type"]
         if joinType == 1:
             return ImageJoinHConcat(dict["left_y_offset"],
