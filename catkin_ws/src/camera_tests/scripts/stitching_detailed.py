@@ -92,7 +92,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument(
     'img_names', nargs='+',
-    help="Files to stitch", type=str
+    help="Files to stitch", type=str , default = None
 )
 parser.add_argument(
     '--try_cuda',
@@ -276,7 +276,7 @@ def get_compensator(args):
 
 def main():
     args = parser.parse_args()
-    img_names = args.img_names
+    img_names = ["C:\\Users\\Caesar\\Pictures\\stiching_test\\image1.jpg","C:\\Users\\Caesar\\Pictures\\stiching_test\\image2.jpg"]
     print(img_names)
     work_megapix = args.work_megapix
     seam_megapix = args.seam_megapix
@@ -312,7 +312,7 @@ def main():
     is_seam_scale_set = False
     is_compose_scale_set = False
     for name in img_names:
-        full_img = cv.imread(cv.samples.findFile(name))
+        full_img = cv.imread(name)
         if full_img is None:
             print("Cannot read image ", name)
             exit()
