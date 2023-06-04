@@ -23,24 +23,24 @@ class ImageJoinFactory():
             if k in dict:
                 continue
             else: dict.update({k:v["default"]})
-        joinType = dict["join_type"]
+        joinType = self.arg_dict["join_type"]
         if joinType == 1:
-            return ImageJoinHConcat(dict["left_y_offset"],
-                                    dict["right_y_offset"],
-                                    dict["left_x_offset"],
-                                    dict["right_x_offset"])
+            return ImageJoinHConcat(self.arg_dict["left_y_offset"],
+                                    self.arg_dict["right_y_offset"],
+                                    self.arg_dict["left_x_offset"],
+                                    self.arg_dict["right_x_offset"])
         elif joinType == 2:
-            return ImageJoinFeature(dict["ratio"],
-                                    dict["min_match"],
-                                    dict["smoothing_window_size"],
-                                    dict["matching_write"],
-                                    dict["static_matrix"],
-                                    dict["static_mask"])
+            return ImageJoinFeature(self.arg_dict["ratio"],
+                                    self.arg_dict["min_match"],
+                                    self.arg_dict["smoothing_window_size"],
+                                    self.arg_dict["matching_write"],
+                                    self.arg_dict["static_matrix"],
+                                    self.arg_dict["static_mask"])
         elif joinType == 3:
-            return ImageJoinOpenCV(dict["ratio"],
-                                   dict["min_match"],
-                                   dict["smoothing_window_size"],
-                                   dict["stitchter_type"])
+            return ImageJoinOpenCV(self.arg_dict["ratio"],
+                                   self.arg_dict["min_match"],
+                                   self.arg_dict["smoothing_window_size"],
+                                   self.arg_dict["stitchter_type"])
         elif joinType == 4:
             return ImageJoinCuda(dict)
         
@@ -238,126 +238,127 @@ class ImageJoinOpenCV(ImageJoin):
         
 
 class ImageJoinCuda(ImageJoin):
-    EXPOS_COMP_CHOICES = OrderedDict()
-    EXPOS_COMP_CHOICES['gain_blocks'] = cv.detail.ExposureCompensator_GAIN_BLOCKS
-    EXPOS_COMP_CHOICES['gain'] = cv.detail.ExposureCompensator_GAIN
-    EXPOS_COMP_CHOICES['channel'] = cv.detail.ExposureCompensator_CHANNELS
-    EXPOS_COMP_CHOICES['channel_blocks'] = cv.detail.ExposureCompensator_CHANNELS_BLOCKS
-    EXPOS_COMP_CHOICES['no'] = cv.detail.ExposureCompensator_NO
-
-    BA_COST_CHOICES = OrderedDict()
-    BA_COST_CHOICES['ray'] = cv.detail_BundleAdjusterRay
-    BA_COST_CHOICES['reproj'] = cv.detail_BundleAdjusterReproj
-    BA_COST_CHOICES['affine'] = cv.detail_BundleAdjusterAffinePartial
-    BA_COST_CHOICES['no'] = cv.detail_NoBundleAdjuster
-
-    FEATURES_FIND_CHOICES = OrderedDict()
-    try:
-        cv.xfeatures2d_SURF.create() # check if the function can be called
-        FEATURES_FIND_CHOICES['surf'] = cv.xfeatures2d_SURF.create
-    except (AttributeError, cv.error) as e:
-        print("SURF not available")
-    # if SURF not available, ORB is default
-    FEATURES_FIND_CHOICES['orb'] = cv.ORB.create
-    try:
-        FEATURES_FIND_CHOICES['sift'] = cv.SIFT_create
-    except AttributeError:
-        print("SIFT not available")
-    try:
-        FEATURES_FIND_CHOICES['brisk'] = cv.BRISK_create
-    except AttributeError:
-        print("BRISK not available")
-    try:
-        FEATURES_FIND_CHOICES['akaze'] = cv.AKAZE_create
-    except AttributeError:
-        print("AKAZE not available")
-
-    SEAM_FIND_CHOICES = OrderedDict()
-    SEAM_FIND_CHOICES['gc_color'] = cv.detail_GraphCutSeamFinder('COST_COLOR')
-    SEAM_FIND_CHOICES['gc_colorgrad'] = cv.detail_GraphCutSeamFinder('COST_COLOR_GRAD')
-    SEAM_FIND_CHOICES['dp_color'] = cv.detail_DpSeamFinder('COLOR')
-    SEAM_FIND_CHOICES['dp_colorgrad'] = cv.detail_DpSeamFinder('COLOR_GRAD')
-    SEAM_FIND_CHOICES['voronoi'] = cv.detail.SeamFinder_createDefault(cv.detail.SeamFinder_VORONOI_SEAM)
-    SEAM_FIND_CHOICES['no'] = cv.detail.SeamFinder_createDefault(cv.detail.SeamFinder_NO)
-
-    ESTIMATOR_CHOICES = OrderedDict()
-    ESTIMATOR_CHOICES['homography'] = cv.detail_HomographyBasedEstimator
-    ESTIMATOR_CHOICES['affine'] = cv.detail_AffineBasedEstimator
-
-    WARP_CHOICES = (
-        'spherical',
-        'plane',
-        'affine',
-        'cylindrical',
-        'fisheye',
-        'stereographic',
-        'compressedPlaneA2B1',
-        'compressedPlaneA1.5B1',
-        'compressedPlanePortraitA2B1',
-        'compressedPlanePortraitA1.5B1',
-        'paniniA2B1',
-        'paniniA1.5B1',
-        'paniniPortraitA2B1',
-        'paniniPortraitA1.5B1',
-        'mercator',
-        'transverseMercator',
-    )
-
-    WAVE_CORRECT_CHOICES = OrderedDict()
-    WAVE_CORRECT_CHOICES['horiz'] = cv.detail.WAVE_CORRECT_HORIZ
-    WAVE_CORRECT_CHOICES['no'] = None
-    WAVE_CORRECT_CHOICES['vert'] = cv.detail.WAVE_CORRECT_VERT
-
-    BLEND_CHOICES = ('multiband', 'feather', 'no',)
+    
     
     def __init__(self, args):
+        self.EXPOS_COMP_CHOICES = OrderedDict()
+        self.EXPOS_COMP_CHOICES['gain_blocks'] = cv.detail.ExposureCompensator_GAIN_BLOCKS
+        self.EXPOS_COMP_CHOICES['gain'] = cv.detail.ExposureCompensator_GAIN
+        self.EXPOS_COMP_CHOICES['channel'] = cv.detail.ExposureCompensator_CHANNELS
+        self.EXPOS_COMP_CHOICES['channel_blocks'] = cv.detail.ExposureCompensator_CHANNELS_BLOCKS
+        self.EXPOS_COMP_CHOICES['no'] = cv.detail.ExposureCompensator_NO
+
+        self.BA_COST_CHOICES = OrderedDict()
+        self.BA_COST_CHOICES['ray'] = cv.detail_BundleAdjusterRay
+        self.BA_COST_CHOICES['reproj'] = cv.detail_BundleAdjusterReproj
+        self.BA_COST_CHOICES['affine'] = cv.detail_BundleAdjusterAffinePartial
+        self.BA_COST_CHOICES['no'] = cv.detail_NoBundleAdjuster
+
+        self.FEATURES_FIND_CHOICES = OrderedDict()
+        try:
+            cv.xfeatures2d_SURF.create() # check if the function can be called
+            self.FEATURES_FIND_CHOICES['surf'] = cv.xfeatures2d_SURF.create
+        except (AttributeError, cv.error) as e:
+            print("SURF not available")
+        # if SURF not available, ORB is default
+        self.FEATURES_FIND_CHOICES['orb'] = cv.ORB.create
+        try:
+            self.FEATURES_FIND_CHOICES['sift'] = cv.SIFT_create
+        except AttributeError:
+            print("SIFT not available")
+        try:
+            self.FEATURES_FIND_CHOICES['brisk'] = cv.BRISK_create
+        except AttributeError:
+            print("BRISK not available")
+        try:
+            self.FEATURES_FIND_CHOICES['akaze'] = cv.AKAZE_create
+        except AttributeError:
+            print("AKAZE not available")
+
+        self.SEAM_FIND_CHOICES = OrderedDict()
+        self.SEAM_FIND_CHOICES['gc_color'] = cv.detail_GraphCutSeamFinder('COST_COLOR')
+        self.SEAM_FIND_CHOICES['gc_colorgrad'] = cv.detail_GraphCutSeamFinder('COST_COLOR_GRAD')
+        self.SEAM_FIND_CHOICES['dp_color'] = cv.detail_DpSeamFinder('COLOR')
+        self.SEAM_FIND_CHOICES['dp_colorgrad'] = cv.detail_DpSeamFinder('COLOR_GRAD')
+        self.SEAM_FIND_CHOICES['voronoi'] = cv.detail.SeamFinder_createDefault(cv.detail.SeamFinder_VORONOI_SEAM)
+        self.SEAM_FIND_CHOICES['no'] = cv.detail.SeamFinder_createDefault(cv.detail.SeamFinder_NO)
+
+        self.ESTIMATOR_CHOICES = OrderedDict()
+        self.ESTIMATOR_CHOICES['homography'] = cv.detail_HomographyBasedEstimator
+        self.ESTIMATOR_CHOICES['affine'] = cv.detail_AffineBasedEstimator
+
+        self.WARP_CHOICES = (
+            'spherical',
+            'plane',
+            'affine',
+            'cylindrical',
+            'fisheye',
+            'stereographic',
+            'compressedPlaneA2B1',
+            'compressedPlaneA1.5B1',
+            'compressedPlanePortraitA2B1',
+            'compressedPlanePortraitA1.5B1',
+            'paniniA2B1',
+            'paniniA1.5B1',
+            'paniniPortraitA2B1',
+            'paniniPortraitA1.5B1',
+            'mercator',
+            'transverseMercator',
+        )
+
+        self.WAVE_CORRECT_CHOICES = OrderedDict()
+        self.WAVE_CORRECT_CHOICES['horiz'] = cv.detail.WAVE_CORRECT_HORIZ
+        self.WAVE_CORRECT_CHOICES['no'] = None
+        self.WAVE_CORRECT_CHOICES['vert'] = cv.detail.WAVE_CORRECT_VERT
+
+        self.BLEND_CHOICES = ('multiband', 'feather', 'no',)
         
         for k,v in p.default_cuda_join.items():
             args.update({k:v})
-        self.args = args
+        self.arg_dict = args
             
         super().__init__()
 
     def blending(self, img1, img2):
         frames = [img1, img2]
-        img_names = []
-        work_megapix = dict["work_megapix"]
-        seam_megapix = dict["seam_megapix"]
-        compose_megapix = dict["compose_megapix"]
-        conf_thresh = dict["conf_thresh"]
-        ba_refine_mask = dict["ba_refine_mask"]
-        wave_correct = WAVE_CORRECT_CHOICES[dict["wave_correct"]]
-        if dict["save_graph"] is None:
+        work_megapix = self.arg_dict["work_megapix"]
+        seam_megapix = self.arg_dict["seam_megapix"]
+        compose_megapix = self.arg_dict["compose_megapix"]
+        conf_thresh = self.arg_dict["conf_thresh"]
+        ba_refine_mask = self.arg_dict["ba_refine_mask"]
+        wave_correct = self.WAVE_CORRECT_CHOICES[self.arg_dict["wave_correct"]]
+        if self.arg_dict["save_graph"] is None:
             save_graph = False
         else:
             save_graph = True
-        warp_type = dict["warp"]
-        blend_type = dict["blend"]
-        blend_strength = dict["blend_strength"]
-        result_name = dict["output"]
-        if dict["timelapse"] is not None:
+        warp_type = self.arg_dict["warp"]
+        blend_type = self.arg_dict["blend"]
+        blend_strength = self.arg_dict["blend_strength"]
+        result_name = self.arg_dict["output"]
+        if self.arg_dict["timelapse"] is not None:
             timelapse = True
-            if dict["timelapse"] == "as_is":
+            if self.arg_dict["timelapse"] == "as_is":
                 timelapse_type = cv.detail.Timelapser_AS_IS
-            elif dict["timelapse"] == "crop":
+            elif self.arg_dict["timelapse"] == "crop":
                 timelapse_type = cv.detail.Timelapser_CROP
             else:
                 print("Bad timelapse method")
                 exit()
         else:
             timelapse = False
-        finder = FEATURES_FIND_CHOICES[dict["features"]]()
+        finder = self.FEATURES_FIND_CHOICES[self.arg_dict["features"]]()
         seam_work_aspect = 1
         full_img_sizes = []
         features = []
         images = []
+        img_names = [] #variable left over from OpenCVs sample stitching_detailed may be removed later
         is_work_scale_set = False
         is_seam_scale_set = False
         is_compose_scale_set = False
         i=0
         for frame in frames:
             full_img = frame
-            img_names.append("img%d"%i)
+            img_names.append("img%d"%i) #simulate existence of file names
             i+=1
             if full_img is None:
                 print("Cannot read image ", name)
@@ -384,12 +385,12 @@ class ImageJoinCuda(ImageJoin):
             img = cv.resize(src=full_img, dsize=None, fx=seam_scale, fy=seam_scale, interpolation=cv.INTER_LINEAR_EXACT)
             images.append(img)
 
-        matcher = get_matcher_dict(dict)
+        matcher = self.get_matcher()
         p = matcher.apply2(features)
         matcher.collectGarbage()
 
         if save_graph:
-            with open(dict["save_graph"], 'w') as fh:
+            with open(self.arg_dict["save_graph"], 'w') as fh:
                 fh.write(cv.detail.matchesGraphAsString(img_names, p, conf_thresh))
 
         indices = cv.detail.leaveBiggestComponent(features, p, conf_thresh)
@@ -408,7 +409,7 @@ class ImageJoinCuda(ImageJoin):
             print("Need more images")
             exit()
 
-        estimator = ESTIMATOR_CHOICES[dict["estimator"]]()
+        estimator = self.ESTIMATOR_CHOICES[self.arg_dict["estimator"]]()
         b, cameras = estimator.apply(features, p, None)
         if not b:
             print("Homography estimation failed.")
@@ -416,7 +417,7 @@ class ImageJoinCuda(ImageJoin):
         for cam in cameras:
             cam.R = cam.R.astype(np.float32)
 
-        adjuster = BA_COST_CHOICES[dict["ba"]]()
+        adjuster = self.BA_COST_CHOICES[self.arg_dict["ba"]]()
         adjuster.setConfThresh(conf_thresh)
         refine_mask = np.zeros((3, 3), np.uint8)
         if ba_refine_mask[0] == 'x':
@@ -478,10 +479,10 @@ class ImageJoinCuda(ImageJoin):
             imgf = img.astype(np.float32)
             images_warped_f.append(imgf)
 
-        compensator = get_compensator_dict(dict)
+        compensator = self.get_compensator()
         compensator.feed(corners=corners, images=images_warped, masks=masks_warped)
 
-        seam_finder = SEAM_FIND_CHOICES[dict["seam"]]
+        seam_finder = self.SEAM_FIND_CHOICES[self.arg_dict["seam"]]
         masks_warped = seam_finder.find(images_warped_f, corners, masks_warped)
         compose_scale = 1
         corners = []
@@ -556,17 +557,17 @@ class ImageJoinCuda(ImageJoin):
             result, result_mask = blender.blend(result, result_mask)
             return result
     
-    def get_matcher_dict(dict):
-        try_cuda = dict["try_cuda"]
-        matcher_type = dict["matcher"]
-        if dict["match_conf"] is None:
-            if dict["features"] == 'orb':
+    def get_matcher(self):
+        try_cuda = self.arg_dict["try_cuda"]
+        matcher_type = self.arg_dict["matcher"]
+        if self.arg_dict["match_conf"] is None:
+            if self.arg_dict["features"] == 'orb':
                 match_conf = 0.3
             else:
                 match_conf = 0.65
         else:
-            match_conf = dict["match_conf"]
-        range_width = dict["rangewidth"]
+            match_conf = self.arg_dict["match_conf"]
+        range_width = self.arg_dict["rangewidth"]
         if matcher_type == "affine":
             matcher = cv.detail_AffineBestOf2NearestMatcher(False, try_cuda, match_conf)
         elif range_width == -1:
@@ -576,10 +577,10 @@ class ImageJoinCuda(ImageJoin):
         return matcher
 
 
-    def get_compensator_dict(dict):
-        expos_comp_type = EXPOS_COMP_CHOICES[dict["expos_comp"]]
-        expos_comp_nr_feeds = dict["expos_comp_nr_feeds"]
-        expos_comp_block_size = dict["expos_comp_block_size"]
+    def get_compensator(self):
+        expos_comp_type = self.EXPOS_COMP_CHOICES[self.arg_dict["expos_comp"]]
+        expos_comp_nr_feeds = self.arg_dict["expos_comp_nr_feeds"]
+        expos_comp_block_size = self.arg_dict["expos_comp_block_size"]
         # expos_comp_nr_filtering = args.expos_comp_nr_filtering
         if expos_comp_type == cv.detail.ExposureCompensator_CHANNELS:
             compensator = cv.detail_ChannelsCompensator(expos_comp_nr_feeds)
