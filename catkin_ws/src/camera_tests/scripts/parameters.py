@@ -1,4 +1,5 @@
 import cv2
+import cuda_join
 #~ indicates a private parameter and will adjust to the namespace
 param_list = {
         "camera1": "~camera1",
@@ -28,7 +29,7 @@ param_list = {
     }
 
 default_list = {
-        "camera1": "/joined_cams/usb_cam1/image_mono",
+        "camera1": {"ros_param": "~camera1", "default": "/joined_cams/usb_cam1/image_mono"},
         "camera2": "/joined_cams/usb_cam2/image_mono",
         "publish": "joined_image",
         "queue_size": 10,
@@ -53,3 +54,31 @@ default_list = {
         "console_log": False,
         "cuda_device": 0
     }
+
+default_list["camera1"]["ros_param"]
+default_cuda_join = {
+    'try_cuda': True,
+    'work_megapix': 0.6,
+    'features': list(cuda_join.FEATURES_FIND_CHOICES.keys())[0],
+    'matcher': 'homography',
+    'estimator': list(cuda_join.ESTIMATOR_CHOICES.keys())[0],
+    'match_conf': 0.65,
+    'conf_thresh': 1.0,
+    'ba': list(cuda_join.BA_COST_CHOICES.keys())[0],
+    'ba_refine_mask': 'xxxxx',
+    'wave_correct': list(cuda_join.WAVE_CORRECT_CHOICES.keys())[0],
+    'save_graph': None,
+    'warp': cuda_join.WARP_CHOICES[0],
+    'seam_megapix': 0.1,
+    'seam': list(cuda_join.SEAM_FIND_CHOICES.keys())[0],
+    'compose_megapix': -1,
+    'expos_comp': list(cuda_join.EXPOS_COMP_CHOICES.keys())[0],
+    'expos_comp_nr_feeds': 1,
+    'expos_comp_nr_filtering': 2,
+    'expos_comp_block_size': 32,
+    'blend': cuda_join.BLEND_CHOICES[0],
+    'blend_strength': 5,
+    'output': 'result.jpg',
+    'timelapse': None,
+    'rangewidth': -1
+}
