@@ -7,17 +7,20 @@ from parameters import default_list
 
 if __name__ == "__main__":
     runtime_list = dict()
-    runtime_list.update({"join_type": 4})
+    runtime_list.update({"join_type": 2})
     runtime_list.update({"verbose":True})
     runtime_list.update({"direct_import": False})
-    runtime_list.update({"static_matrix": False})
+    runtime_list.update({"static_matrix": True})
     runtime_list.update({"timing":False})
     runtime_list.update({"console_log":True})
     for k,v in default_list.items():
         if not (k in runtime_list):
             runtime_list.update({k:v["default"]})
+    print("Initializing Cam1")
     cam1 = cv2.VideoCapture(1)
+    print("Initializing Cam2")
     cam2 = cv2.VideoCapture(2)
+    print("Cameras initialized, Creating Joiner")
     joiner = join.ImageJoinFactory.create_instance(runtime_list)
     tries = 0
     while True:
@@ -31,9 +34,9 @@ if __name__ == "__main__":
         try:
             
             a, frame1 = cam1.read()
-            #frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY) #uncomment for b/w images
-            #frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
             b, frame2 = cam2.read()
+            frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY) #uncomment for b/w images
+            frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
             if a == False or b == False:
                 raise Exception("Couldnt open Cameras")
             
@@ -41,11 +44,16 @@ if __name__ == "__main__":
             cv2.imshow("Cam2", frame2)
             if tries >100:
                 try:
-                    cv2.imshow("Joined", joiner.blending(frame1, frame2))
+                    joined = joiner.blending(frame1, frame2)
+                    cv2.imshow("Joined", joined)
                 except Exception as e:
                     
                     print("Joining failed: ", e)
                     continue
+            elif tries == 0:
+                print("Waiting", end= "")
+            else: 
+                print(".", end = "")
             tries +=1
         except:
             

@@ -281,7 +281,7 @@ def main():
     compose_megapix = args.compose_megapix
     conf_thresh = args.conf_thresh
     ba_refine_mask = args.ba_refine_mask
-    wave_correct = WAVE_CORRECT_CHOICES[args.wave_correct]
+    wave_correct = WAVE_CORRECT_CHOICES[args.wave_correct] #used for rotation estimation
     if args.save_graph is None:
         save_graph = False
     else:

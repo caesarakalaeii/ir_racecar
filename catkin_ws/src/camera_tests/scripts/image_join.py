@@ -122,8 +122,9 @@ class ImageJoinFeature(ImageJoin):
             if m1.distance < self.ratio * m2.distance:
                 good_points.append((m1.trainIdx, m1.queryIdx))
                 good_matches.append([m1])
-        img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, good_matches, None, flags=2)
+        
         if self.matching_write:
+            img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, good_matches, None, flags=2)
             cv.imwrite('matching.jpg', img3)
         if len(good_points) > self.min_match:
             image1_kp = np.float32(
@@ -238,44 +239,34 @@ class ImageJoinOpenCV(ImageJoin):
         
 
 class ImageJoinCuda(ImageJoin):
-    
-    
-    def __init__(self, arg_dict):
-        self.EXPOS_COMP_CHOICES = OrderedDict()
+    def create_EXPOS_COMP_CHOICES(self):
         self.EXPOS_COMP_CHOICES['gain_blocks'] = cv.detail.ExposureCompensator_GAIN_BLOCKS
         self.EXPOS_COMP_CHOICES['gain'] = cv.detail.ExposureCompensator_GAIN
         self.EXPOS_COMP_CHOICES['channel'] = cv.detail.ExposureCompensator_CHANNELS
         self.EXPOS_COMP_CHOICES['channel_blocks'] = cv.detail.ExposureCompensator_CHANNELS_BLOCKS
         self.EXPOS_COMP_CHOICES['no'] = cv.detail.ExposureCompensator_NO
-
-        self.BA_COST_CHOICES = OrderedDict()
+    def create_BA_COST_CHOICES(self):
         self.BA_COST_CHOICES['ray'] = cv.detail_BundleAdjusterRay
         self.BA_COST_CHOICES['reproj'] = cv.detail_BundleAdjusterReproj
         self.BA_COST_CHOICES['affine'] = cv.detail_BundleAdjusterAffinePartial
         self.BA_COST_CHOICES['no'] = cv.detail_NoBundleAdjuster
-
-        self.FEATURES_FIND_CHOICES = OrderedDict()
+    def create_FEATURES_FIND_CHOICES(self):
         try:
-            cv.xfeatures2d_SURF.create() # check if the function can be called
-            self.FEATURES_FIND_CHOICES['surf'] = cv.xfeatures2d_SURF.create
+            cv.xfeatures2d_SURF.create() # check if the function can be called_FIND_CHOICES['surf'] = cv.xfeatures2d_SURF.create
         except (AttributeError, cv.error) as e:
             print("SURF not available")
-        # if SURF not available, ORB is default
-        self.FEATURES_FIND_CHOICES['orb'] = cv.ORB.create
-        try:
-            self.FEATURES_FIND_CHOICES['sift'] = cv.SIFT_create
+        # if SURF not available, ORB is defaul_FIND_CHOICES['orb'] = cv.ORB.create
+        try:self.FEATURES_FIND_CHOICES['sift'] = cv.SIFT_create
         except AttributeError:
             print("SIFT not available")
-        try:
-            self.FEATURES_FIND_CHOICES['brisk'] = cv.BRISK_create
+        try:self.FEATURES_FIND_CHOICES['brisk'] = cv.BRISK_create
         except AttributeError:
             print("BRISK not available")
-        try:
-            self.FEATURES_FIND_CHOICES['akaze'] = cv.AKAZE_create
+        try:self.FEATURES_FIND_CHOICES['akaze'] = cv.AKAZE_create
         except AttributeError:
             print("AKAZE not available")
-
-        self.SEAM_FIND_CHOICES = OrderedDict()
+            
+    def create_SEAM_FIND_CHOICES(self):
         self.SEAM_FIND_CHOICES['gc_color'] = cv.detail_GraphCutSeamFinder('COST_COLOR')
         self.SEAM_FIND_CHOICES['gc_colorgrad'] = cv.detail_GraphCutSeamFinder('COST_COLOR_GRAD')
         self.SEAM_FIND_CHOICES['dp_color'] = cv.detail_DpSeamFinder('COLOR')
@@ -283,9 +274,29 @@ class ImageJoinCuda(ImageJoin):
         self.SEAM_FIND_CHOICES['voronoi'] = cv.detail.SeamFinder_createDefault(cv.detail.SeamFinder_VORONOI_SEAM)
         self.SEAM_FIND_CHOICES['no'] = cv.detail.SeamFinder_createDefault(cv.detail.SeamFinder_NO)
 
-        self.ESTIMATOR_CHOICES = OrderedDict()
+    def create_ESTIMATOR_CHOICES(self):
         self.ESTIMATOR_CHOICES['homography'] = cv.detail_HomographyBasedEstimator
         self.ESTIMATOR_CHOICES['affine'] = cv.detail_AffineBasedEstimator
+        
+    def create_WAVE_CORRECT_CHOICES(self):
+        self.WAVE_CORRECT_CHOICES['horiz'] = cv.detail.WAVE_CORRECT_HORIZ
+        self.WAVE_CORRECT_CHOICES['no'] = None
+        self.WAVE_CORRECT_CHOICES['vert'] = cv.detail.WAVE_CORRECT_VERT
+            
+    def __init__(self, arg_dict):
+        self.EXPOS_COMP_CHOICES = OrderedDict()
+        self.create_EXPOS_COMP_CHOICES()
+
+        self.BA_COST_CHOICES = OrderedDict()
+        self.create_BA_COST_CHOICES()
+        self.FEATURES_FIND_CHOICES = OrderedDict()
+        self.create_FEATURES_FIND_CHOICES()
+
+        self.SEAM_FIND_CHOICES = OrderedDict()
+        self.create_SEAM_FIND_CHOICES()
+        
+        self.ESTIMATOR_CHOICES = OrderedDict()
+        self.create_ESTIMATOR_CHOICES()
 
         self.WARP_CHOICES = (
             'spherical',
@@ -307,9 +318,7 @@ class ImageJoinCuda(ImageJoin):
         )
 
         self.WAVE_CORRECT_CHOICES = OrderedDict()
-        self.WAVE_CORRECT_CHOICES['horiz'] = cv.detail.WAVE_CORRECT_HORIZ
-        self.WAVE_CORRECT_CHOICES['no'] = None
-        self.WAVE_CORRECT_CHOICES['vert'] = cv.detail.WAVE_CORRECT_VERT
+        self.create_WAVE_CORRECT_CHOICES()
 
         self.BLEND_CHOICES = ('multiband', 'feather', 'no',)
         
@@ -317,46 +326,52 @@ class ImageJoinCuda(ImageJoin):
             if not k in arg_dict:
                 arg_dict.update({k:v["default"]})
         self.arg_dict = arg_dict
-            
-        super().__init__()
-
-    def blending(self, img1, img2):
-        frames = [img1, img2]
-        work_megapix = self.arg_dict["work_megapix"]
-        seam_megapix = self.arg_dict["seam_megapix"]
-        compose_megapix = self.arg_dict["compose_megapix"]
-        conf_thresh = self.arg_dict["conf_thresh"]
-        ba_refine_mask = self.arg_dict["ba_refine_mask"]
-        wave_correct = self.WAVE_CORRECT_CHOICES[self.arg_dict["wave_correct"]]
+        
+        
+        self.work_megapix = self.arg_dict["work_megapix"]
+        self.seam_megapix = self.arg_dict["seam_megapix"]
+        self.compose_megapix = self.arg_dict["compose_megapix"]
+        self.conf_thresh = self.arg_dict["conf_thresh"]
+        self.ba_refine_mask = self.arg_dict["ba_refine_mask"]
+        self.wave_correct = self.WAVE_CORRECT_CHOICES[self.arg_dict["wave_correct"]]
         if self.arg_dict["save_graph"] is None:
-            save_graph = False
+            self.save_graph = False
         else:
-            save_graph = True
-        warp_type = self.arg_dict["warp"]
-        blend_type = self.arg_dict["blend"]
-        blend_strength = self.arg_dict["blend_strength"]
-        result_name = self.arg_dict["output"]
-        if self.arg_dict["timelapse"] is not None:
-            timelapse = True
+            self.save_graph = True
+        self.warp_type = self.arg_dict["warp"]
+        self.blend_type = self.arg_dict["blend"]
+        self.blend_strength = self.arg_dict["blend_strength"]
+        self.result_name = self.arg_dict["output"]
+        if self.arg_dict["timelapse"]:
+            self.timelapse = True
             if self.arg_dict["timelapse"] == "as_is":
-                timelapse_type = cv.detail.Timelapser_AS_IS
+                self.timelapse_type = cv.detail.Timelapser_AS_IS
             elif self.arg_dict["timelapse"] == "crop":
-                timelapse_type = cv.detail.Timelapser_CROP
+                self.timelapse_type = cv.detail.Timelapser_CROP
             else:
                 print("Bad timelapse method")
                 exit()
         else:
-            timelapse = False
-        finder = self.FEATURES_FIND_CHOICES[self.arg_dict["features"]]()
-        seam_work_aspect = 1
-        full_img_sizes = []
-        features = []
-        images = []
+            self.timelapse = False
+        self.matcher = None
+        self.finder  = self.FEATURES_FIND_CHOICES[self.arg_dict["features"]]()
+        self.seam_work_aspect = 1
+        self.compensator = None
+        
+        
+        
+        super().__init__()
+
+    def blending(self, img1, img2):
+        frames = [img1, img2]
+        i=0
         img_names = [] #variable left over from OpenCVs sample stitching_detailed may be removed later
+        full_img_sizes = []
+        images = []
+        features = []
         is_work_scale_set = False
         is_seam_scale_set = False
         is_compose_scale_set = False
-        i=0
         for frame in frames:
             full_img = frame
             img_names.append("Frame %d"%i) #simulate existence of file names
@@ -365,36 +380,36 @@ class ImageJoinCuda(ImageJoin):
                 print("Cannot read Frame ", name)
                 exit()
             full_img_sizes.append((full_img.shape[1], full_img.shape[0]))
-            if work_megapix < 0:
+            if self.work_megapix < 0:
                 img = full_img
                 work_scale = 1
                 is_work_scale_set = True
             else:
                 if is_work_scale_set is False:
-                    work_scale = min(1.0, np.sqrt(work_megapix * 1e6 / (full_img.shape[0] * full_img.shape[1])))
+                    work_scale = min(1.0, np.sqrt(self.work_megapix * 1e6 / (full_img.shape[0] * full_img.shape[1])))
                     is_work_scale_set = True
                 img = cv.resize(src=full_img, dsize=None, fx=work_scale, fy=work_scale, interpolation=cv.INTER_LINEAR_EXACT)
             if is_seam_scale_set is False:
-                if seam_megapix > 0:
-                    seam_scale = min(1.0, np.sqrt(seam_megapix * 1e6 / (full_img.shape[0] * full_img.shape[1])))
+                if self.seam_megapix > 0:
+                    seam_scale = min(1.0, np.sqrt(self.seam_megapix * 1e6 / (full_img.shape[0] * full_img.shape[1])))
                 else:
                     seam_scale = 1.0
                 seam_work_aspect = seam_scale / work_scale
                 is_seam_scale_set = True
-            img_feat = cv.detail.computeImageFeatures2(finder, img)
+            img_feat = cv.detail.computeImageFeatures2(self.finder, img)
             features.append(img_feat)
             img = cv.resize(src=full_img, dsize=None, fx=seam_scale, fy=seam_scale, interpolation=cv.INTER_LINEAR_EXACT)
             images.append(img)
+        if self.matcher is None:
+            self.set_matcher()
+        p = self.matcher.apply2(features)
+        self.matcher.collectGarbage()
 
-        matcher = self.get_matcher()
-        p = matcher.apply2(features)
-        matcher.collectGarbage()
-
-        if save_graph:
+        if self.save_graph:
             with open(self.arg_dict["save_graph"], 'w') as fh:
-                fh.write(cv.detail.matchesGraphAsString(img_names, p, conf_thresh))
+                fh.write(cv.detail.matchesGraphAsString(img_names, p, self.conf_thresh))
 
-        indices = cv.detail.leaveBiggestComponent(features, p, conf_thresh)
+        indices = cv.detail.leaveBiggestComponent(features, p, self.conf_thresh)
         img_subset = []
         img_names_subset = []
         full_img_sizes_subset = []
@@ -417,17 +432,17 @@ class ImageJoinCuda(ImageJoin):
             cam.R = cam.R.astype(np.float32)
 
         adjuster = self.BA_COST_CHOICES[self.arg_dict["ba"]]()
-        adjuster.setConfThresh(conf_thresh)
+        adjuster.setConfThresh(self.conf_thresh)
         refine_mask = np.zeros((3, 3), np.uint8)
-        if ba_refine_mask[0] == 'x':
+        if self.ba_refine_mask[0] == 'x':
             refine_mask[0, 0] = 1
-        if ba_refine_mask[1] == 'x':
+        if self.ba_refine_mask[1] == 'x':
             refine_mask[0, 1] = 1
-        if ba_refine_mask[2] == 'x':
+        if self.ba_refine_mask[2] == 'x':
             refine_mask[0, 2] = 1
-        if ba_refine_mask[3] == 'x':
+        if self.ba_refine_mask[3] == 'x':
             refine_mask[1, 1] = 1
-        if ba_refine_mask[4] == 'x':
+        if self.ba_refine_mask[4] == 'x':
             refine_mask[1, 2] = 1
         adjuster.setRefinementMask(refine_mask)
         b, cameras = adjuster.apply(features, p, cameras)
@@ -441,11 +456,11 @@ class ImageJoinCuda(ImageJoin):
             warped_image_scale = focals[len(focals) // 2]
         else:
             warped_image_scale = (focals[len(focals) // 2] + focals[len(focals) // 2 - 1]) / 2
-        if wave_correct is not None:
+        if self.wave_correct is not None:
             rmats = []
             for cam in cameras:
                 rmats.append(np.copy(cam.R))
-            rmats = cv.detail.waveCorrect(rmats, wave_correct)
+            rmats = cv.detail.waveCorrect(rmats, self.wave_correct)
             for idx, cam in enumerate(cameras):
                 cam.R = rmats[idx]
         corners = []
@@ -457,7 +472,7 @@ class ImageJoinCuda(ImageJoin):
             um = cv.UMat(255 * np.ones((images[i].shape[0], images[i].shape[1]), np.uint8))
             masks.append(um)
 
-        warper = cv.PyRotationWarper(warp_type, warped_image_scale * seam_work_aspect)  # warper could be nullptr?
+        warper = cv.PyRotationWarper(self.warp_type, warped_image_scale * seam_work_aspect)  # warper could be nullptr?
         for idx in range(0, num_images):
             K = cameras[idx].K().astype(np.float32)
             swa = seam_work_aspect
@@ -476,9 +491,9 @@ class ImageJoinCuda(ImageJoin):
         for img in images_warped:
             imgf = img.astype(np.float32)
             images_warped_f.append(imgf)
-
-        compensator = self.get_compensator()
-        compensator.feed(corners=corners, images=images_warped, masks=masks_warped)
+        if self.compensator is None:
+            self.set_compensator()
+        self.compensator.feed(corners=corners, images=images_warped, masks=masks_warped)
 
         seam_finder = self.SEAM_FIND_CHOICES[self.arg_dict["seam"]]
         masks_warped = seam_finder.find(images_warped_f, corners, masks_warped)
@@ -491,12 +506,12 @@ class ImageJoinCuda(ImageJoin):
         for idx, name in enumerate(img_names):
             full_img = frame
             if not is_compose_scale_set:
-                if compose_megapix > 0:
-                    compose_scale = min(1.0, np.sqrt(compose_megapix * 1e6 / (full_img.shape[0] * full_img.shape[1])))
+                if self.compose_megapix > 0:
+                    compose_scale = min(1.0, np.sqrt(self.compose_megapix * 1e6 / (full_img.shape[0] * full_img.shape[1])))
                 is_compose_scale_set = True
                 compose_work_aspect = compose_scale / work_scale
                 warped_image_scale *= compose_work_aspect
-                warper = cv.PyRotationWarper(warp_type, warped_image_scale)
+                warper = cv.PyRotationWarper(self.warp_type, warped_image_scale)
                 for i in range(0, len(img_names)):
                     cameras[i].focal *= compose_work_aspect
                     cameras[i].ppx *= compose_work_aspect
@@ -514,31 +529,31 @@ class ImageJoinCuda(ImageJoin):
                 img = full_img
             _img_size = (img.shape[1], img.shape[0])
             K = cameras[idx].K().astype(np.float32)
-            corner, image_warped = warper.warp(img, K, cameras[idx].R, cv.INTER_LINEAR, cv.BORDER_REFLECT)
+            corner, image_warped = warper.warp(img, K, cameras[idx].R, cv.INTER_LINEAR, cv.BORDER_REFLECT) #Every Iteration
             mask = 255 * np.ones((img.shape[0], img.shape[1]), np.uint8)
-            p, mask_warped = warper.warp(mask, K, cameras[idx].R, cv.INTER_NEAREST, cv.BORDER_CONSTANT)
-            compensator.apply(idx, corners[idx], image_warped, mask_warped)
+            p, mask_warped = warper.warp(mask, K, cameras[idx].R, cv.INTER_NEAREST, cv.BORDER_CONSTANT) #every iteration
+            self.compensator.apply(idx, corners[idx], image_warped, mask_warped)
             image_warped_s = image_warped.astype(np.int16)
             dilated_mask = cv.dilate(masks_warped[idx], None)
             seam_mask = cv.resize(dilated_mask, (mask_warped.shape[1], mask_warped.shape[0]), 0, 0, cv.INTER_LINEAR_EXACT)
             mask_warped = cv.bitwise_and(seam_mask, mask_warped)
-            if blender is None and not timelapse:
+            if blender is None and not self.timelapse:
                 blender = cv.detail.Blender_createDefault(cv.detail.Blender_NO)
                 dst_sz = cv.detail.resultRoi(corners=corners, sizes=sizes)
-                blend_width = np.sqrt(dst_sz[2] * dst_sz[3]) * blend_strength / 100
+                blend_width = np.sqrt(dst_sz[2] * dst_sz[3]) * self.blend_strength / 100
                 if blend_width < 1:
                     blender = cv.detail.Blender_createDefault(cv.detail.Blender_NO)
-                elif blend_type == "multiband":
+                elif self.blend_type == "multiband":
                     blender = cv.detail_MultiBandBlender()
                     blender.setNumBands((np.log(blend_width) / np.log(2.) - 1.).astype(np.int32))
-                elif blend_type == "feather":
+                elif self.blend_type == "feather":
                     blender = cv.detail_FeatherBlender()
                     blender.setSharpness(1. / blend_width)
                 blender.prepare(dst_sz)
-            elif timelapser is None and timelapse:
-                timelapser = cv.detail.Timelapser_createDefault(timelapse_type)
+            elif timelapser is None and self.timelapse:
+                timelapser = cv.detail.Timelapser_createDefault(self.timelapse_type)
                 timelapser.initialize(corners, sizes)
-            if timelapse:
+            if self.timelapse:
                 ma_tones = np.ones((image_warped_s.shape[0], image_warped_s.shape[1]), np.uint8)
                 timelapser.process(image_warped_s, ma_tones, corners[idx])
                 pos_s = img_names[idx].rfind("/")
@@ -546,10 +561,10 @@ class ImageJoinCuda(ImageJoin):
                     fixed_file_name = "fixed_" + img_names[idx]
                 else:
                     fixed_file_name = img_names[idx][:pos_s + 1] + "fixed_" + img_names[idx][pos_s + 1:]
-                cv.imwrite(fixed_file_name, timelapser.getDst())
+                cv.imwrite(fixed_file_name, timelapser.getDst()) #TODO still writing, turn into return if timelapser is needed
             else:
-                blender.feed(cv.UMat(image_warped_s), mask_warped, corners[idx])
-        if not timelapse:
+                blender.feed(cv.UMat(image_warped_s), mask_warped, corners[idx]) #every iteration
+        if not self.timelapse:
             result = None
             result_mask = None
             result, result_mask = blender.blend(result, result_mask)
@@ -558,7 +573,7 @@ class ImageJoinCuda(ImageJoin):
             dst = cv.resize(dst, dsize=None, fx=zoom_x, fy=zoom_x)
             return dst
     
-    def get_matcher(self):
+    def set_matcher(self):
         try_cuda = self.arg_dict["try_cuda"]
         matcher_type = self.arg_dict["matcher"]
         if self.arg_dict["match_conf"] is None:
@@ -575,10 +590,10 @@ class ImageJoinCuda(ImageJoin):
             matcher = cv.detail_BestOf2NearestMatcher(try_cuda, match_conf)
         else:
             matcher = cv.detail_BestOf2NearestRangeMatcher(range_width, try_cuda, match_conf)
-        return matcher
+        self.matcher = matcher
 
 
-    def get_compensator(self):
+    def set_compensator(self):
         expos_comp_type = self.EXPOS_COMP_CHOICES[self.arg_dict["expos_comp"]]
         expos_comp_nr_feeds = self.arg_dict["expos_comp_nr_feeds"]
         expos_comp_block_size = self.arg_dict["expos_comp_block_size"]
@@ -594,4 +609,4 @@ class ImageJoinCuda(ImageJoin):
             # compensator.setNrGainsFilteringIterations(expos_comp_nr_filtering)
         else:
             compensator = cv.detail.ExposureCompensator_createDefault(expos_comp_type)
-        return compensator
+        self.compensator = compensator

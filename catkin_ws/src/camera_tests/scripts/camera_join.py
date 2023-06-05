@@ -267,6 +267,8 @@ if __name__ == '__main__':
     if simulate_params:
         l.warning("Simulating set Parameters, if not launched from a .launch file")
     print("Available Params:")
+    if runtime_list["join_type"] == 3 or runtime_list["join_type"] == 4:
+        l.warning("This Jointype is experimental and might result in unstable behavior, using 1 or 2 is recommended")
     param_names = rospy.get_param_names()
     for i in param_names:
         if "camera_join" in i:
