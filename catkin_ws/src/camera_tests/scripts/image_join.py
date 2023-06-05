@@ -553,7 +553,10 @@ class ImageJoinCuda(ImageJoin):
             result = None
             result_mask = None
             result, result_mask = blender.blend(result, result_mask)
-            return result
+            zoom_x = 600.0 / result.shape[1]
+            dst = cv.normalize(src=result, dst=None, alpha=255., norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+            dst = cv.resize(dst, dsize=None, fx=zoom_x, fy=zoom_x)
+            return dst
     
     def get_matcher(self):
         try_cuda = self.arg_dict["try_cuda"]
