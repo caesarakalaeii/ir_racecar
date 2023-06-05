@@ -17,11 +17,11 @@ if __name__ == "__main__":
     for k,v in default_list.items():
         if not (k in runtime_list):
             runtime_list.update({k:v["default"]})
-    print("Initializing Cam1")
+    l.info("Initializing Cam1")
     cam1 = cv2.VideoCapture(1)
-    print("Initializing Cam2")
+    l.info("Initializing Cam2")
     cam2 = cv2.VideoCapture(2)
-    print("Cameras initialized, Creating Joiner")
+    l.info("Cameras initialized, Creating Joiner")
     joiner = join.ImageJoinFactory.create_instance(runtime_list)
     tries = 0
     while True:
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         k = cv2.waitKey(1)
         if k%256 == 27:
             # ESC pressed
-            print("Escape hit, closing...")
+            l.passing("Escape hit, closing...")
             break
         
         try:
@@ -49,7 +49,7 @@ if __name__ == "__main__":
                     cv2.imshow("Joined", joined)
                 except Exception as e:
                     
-                    print("Joining failed: ", e)
+                    l.error("Joining failed: ", e)
                     continue
             elif tries == 0:
                 print("Waiting", end= "")

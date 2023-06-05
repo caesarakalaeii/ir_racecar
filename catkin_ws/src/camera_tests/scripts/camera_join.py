@@ -68,7 +68,7 @@ class CameraJoin(object):
             self.thread.start()
             
         
-        print("Node sucessfully initialized")
+        self.l.info("Node sucessfully initialized")
 
     
     def direct_import_loop(self):
@@ -85,17 +85,17 @@ class CameraJoin(object):
                 self.l.fail("couldn't fetch frame from cam2")
                 continue
             if self.timing:
-                print("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
+                self.l.info("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
                 self.times[1] = self.times[0]
             self.image_join()
 
     def image1_callback(self,msg):
         if self.VERBOSE:
             str = "Image1 received with encoding: " + msg.encoding
-            print(str)
+            self.l.info(str)
         if self.timing:
             self.times[0] = t.time()
-            print("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
+            self.l.info("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
             self.times[1] = self.times[0]
         self.set_image(msg, 1)
 
@@ -103,7 +103,7 @@ class CameraJoin(object):
     def image2_callback(self,msg):
         if self.VERBOSE:
             str = "Image2 received with encoding: " + msg.encoding
-            print(str)
+            self.l.info(str)
         self.set_image(msg, 2)
 
     def loop(self):
@@ -129,11 +129,11 @@ class CameraJoin(object):
                 self.image2 = self.bridge.imgmsg_to_cv2(image, self.ENCODING)
             if self.timing:
                 end_set  =t.time()
-                print("Time to set image:", (end_set-start_set)*1000, "ms")
+                self.l.info("Time to set image:", (end_set-start_set)*1000, "ms")
             if not self.thread.is_alive():
                 self.thread.start()
         except Exception as e:
-            print(e)
+            self.l.error(e)
 
 
 
@@ -143,7 +143,7 @@ class CameraJoin(object):
     # Join images
         if self.image1 is not None and self.image2 is not None:
             if self.VERBOSE:
-                print("Joining images")
+                self.l.passing("Joining images")
             try:
                 if not isinstance(self.image1, np.ndarray):
                     if self.timing:
@@ -151,18 +151,18 @@ class CameraJoin(object):
                     self.image1 = np.asarray(self.image1)
                     if self.timing:
                         end_img2 = t.time()
-                        print("Time to convert img1: ", (end_img2-start_img2)*1000, "ms")
+                        self.l.info("Time to convert img1: ", (end_img2-start_img2)*1000, "ms")
                     if self.VERBOSE:
-                        print("Converting Image 1 to ndarray")
+                        self.l.passing("Converting Image 1 to ndarray")
                 if not isinstance(self.image2, np.ndarray):
                     if self.timing:
                         start_img2 = t.time()
                     self.image2 = np.asarray(self.image2)
                     if self.timing:
                         end_img2 = t.time()
-                        print("Time to convert img2: ", (end_img2-start_img2)*1000, "ms")
+                        self.l.info("Time to convert img2: ", (end_img2-start_img2)*1000, "ms")
                     if self.VERBOSE:
-                        print("Converting Image 2 to ndarray")
+                        self.l.passing("Converting Image 2 to ndarray")
                 if self.timing:
                     start_blending = t.time()
                 old_image = self.image_joined
@@ -174,24 +174,24 @@ class CameraJoin(object):
                     self.image_joined = old_image
                 if self.timing:
                     end_blending = t.time()
-                    print("Time to blend:", (end_blending-start_blending)*1000, "ms")
+                    self.l.info("Time to blend:", (end_blending-start_blending)*1000, "ms")
                 try:
                     self.publish_image(self.image_joined)
                 except:
                     pass
                 
             except Exception as e :
-                print(e)
+                self.l.error(e)
         elif self.VERBOSE and self.image1 is None and self.image2 is None:
-            print("Both Images are None")
+            self.l.warning("Both Images are None")
         elif self.VERBOSE and self.image1 is None:
             
-            print("Image 1 is None")
+            self.l.warning("Image 1 is None")
         elif self.VERBOSE and self.image2 is None:
             
-            print("Image 2 is None")
+            self.l.warning("Image 2 is None")
         elif self.VERBOSE:
-            l.info("How did we get here?")
+            self.l.info("How did we get here?")
 
     
     def publish_image(self,image_joined):
@@ -201,7 +201,7 @@ class CameraJoin(object):
         self.pub.publish(image_joined_msg)
         if self.timing:
             publish_end = t.time()
-            print("Time to publish: ", (publish_end-publish_start)*1000, "ms")
+            self.l.info("Time to publish: ", (publish_end-publish_start)*1000, "ms")
 
 
         
@@ -230,7 +230,7 @@ if __name__ == '__main__':
     simulate_params = False
     if simulate_params:
         l.warning("Simulating set Parameters, if not launched from a .launch file")
-    print("Available Params:")
+    l.info("Available Params:")
     if runtime_list["join_type"] == 3 or runtime_list["join_type"] == 4:
         l.warning("This Jointype is experimental and might result in unstable behavior, using 1 or 2 is recommended")
     param_names = rospy.get_param_names()

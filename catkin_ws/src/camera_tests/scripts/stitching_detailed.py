@@ -16,6 +16,8 @@ from logger import Logger
 import cv2 as cv
 import numpy as np
 
+l = Logger(False, True)
+
 EXPOS_COMP_CHOICES = OrderedDict()
 EXPOS_COMP_CHOICES['gain_blocks'] = cv.detail.ExposureCompensator_GAIN_BLOCKS
 EXPOS_COMP_CHOICES['gain'] = cv.detail.ExposureCompensator_GAIN
@@ -34,21 +36,21 @@ try:
     cv.xfeatures2d_SURF.create() # check if the function can be called
     FEATURES_FIND_CHOICES['surf'] = cv.xfeatures2d_SURF.create
 except (AttributeError, cv.error) as e:
-    print("SURF not available")
+    l.error("SURF not available")
 # if SURF not available, ORB is default
 FEATURES_FIND_CHOICES['orb'] = cv.ORB.create
 try:
     FEATURES_FIND_CHOICES['sift'] = cv.SIFT_create
 except AttributeError:
-    print("SIFT not available")
+    l.error("SIFT not available")
 try:
     FEATURES_FIND_CHOICES['brisk'] = cv.BRISK_create
 except AttributeError:
-    print("BRISK not available")
+    l.error("BRISK not available")
 try:
     FEATURES_FIND_CHOICES['akaze'] = cv.AKAZE_create
 except AttributeError:
-    print("AKAZE not available")
+    l.error("AKAZE not available")
 
 SEAM_FIND_CHOICES = OrderedDict()
 SEAM_FIND_CHOICES['gc_color'] = cv.detail_GraphCutSeamFinder('COST_COLOR')
@@ -298,7 +300,7 @@ def main():
         elif args.timelapse == "crop":
             timelapse_type = cv.detail.Timelapser_CROP
         else:
-            print("Bad timelapse method")
+            l.fail("Bad timelapse method")
             exit()
     else:
         timelapse = False
@@ -313,7 +315,7 @@ def main():
     for name in img_names:
         full_img = cv.imread(name)
         if full_img is None:
-            print("Cannot read image ", name)
+            l.fail("Cannot read image ", name)
             exit()
         full_img_sizes.append((full_img.shape[1], full_img.shape[0]))
         if work_megapix < 0:
@@ -358,13 +360,13 @@ def main():
     full_img_sizes = full_img_sizes_subset
     num_images = len(img_names)
     if num_images < 2:
-        print("Need more images")
+        l.warning("Need more images")
         exit()
 
     estimator = ESTIMATOR_CHOICES[args.estimator]()
     b, cameras = estimator.apply(features, p, None)
     if not b:
-        print("Homography estimation failed.")
+        l.fail("Homography estimation failed.")
         exit()
     for cam in cameras:
         cam.R = cam.R.astype(np.float32)
@@ -385,7 +387,7 @@ def main():
     adjuster.setRefinementMask(refine_mask)
     b, cameras = adjuster.apply(features, p, cameras)
     if not b:
-        print("Camera parameters adjusting failed.")
+        l.fail("Camera parameters adjusting failed.")
         exit()
     focals = []
     for cam in cameras:
@@ -514,7 +516,7 @@ def main():
         cv.imshow(result_name, dst)
         cv.waitKey()
 
-    print("Done")
+    l.info("Done")
 
 
 if __name__ == '__main__':
