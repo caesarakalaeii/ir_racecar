@@ -12,6 +12,7 @@ from __future__ import print_function
 import argparse
 from collections import OrderedDict
 
+from logger import Logger
 import cv2 as cv
 import numpy as np
 
@@ -272,10 +273,10 @@ def get_compensator(args):
 
 
 def main():
-
+    l = Logger(False, True)
     args = parser.parse_args()
     img_names = ["C:\\Users\\Caesar\\Pictures\\stiching_test\\image1.jpg","C:\\Users\\Caesar\\Pictures\\stiching_test\\image2.jpg"]
-    print(img_names)
+    l.info(img_names)
     work_megapix = args.work_megapix
     seam_megapix = args.seam_megapix
     compose_megapix = args.compose_megapix
