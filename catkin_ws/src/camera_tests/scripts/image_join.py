@@ -336,7 +336,7 @@ class ImageJoinCuda(ImageJoin):
         blend_type = self.arg_dict["blend"]
         blend_strength = self.arg_dict["blend_strength"]
         result_name = self.arg_dict["output"]
-        if self.arg_dict["timelapse"]:
+        if self.arg_dict["timelapse"] is not None:
             timelapse = True
             if self.arg_dict["timelapse"] == "as_is":
                 timelapse_type = cv.detail.Timelapser_AS_IS

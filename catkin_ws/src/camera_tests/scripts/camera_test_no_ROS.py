@@ -19,7 +19,7 @@ if __name__ == "__main__":
     cam1 = cv2.VideoCapture(1)
     cam2 = cv2.VideoCapture(2)
     joiner = join.ImageJoinFactory.create_instance(runtime_list)
-    
+    tries = 0
     while True:
         
         k = cv2.waitKey(1)
@@ -39,12 +39,14 @@ if __name__ == "__main__":
             
             cv2.imshow("Cam1", frame1)
             cv2.imshow("Cam2", frame2)
-            try:
-                cv2.imshow("Joined", joiner.blending(frame1, frame2))
-            except Exception as e:
-                
-                print("Joining failed: ", e)
-                continue
+            if tries >100:
+                try:
+                    cv2.imshow("Joined", joiner.blending(frame1, frame2))
+                except Exception as e:
+                    
+                    print("Joining failed: ", e)
+                    continue
+            tries +=1
         except:
             
             traceback.print_exc()
