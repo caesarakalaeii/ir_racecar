@@ -3,14 +3,15 @@ import numpy as np
 from collections import OrderedDict
 import cv2 as cv
 from parameters import default_list
+from logger import Logger
 
 
 
 class ImageJoin(object):
     
 
-    def __init__(self):
-        pass
+    def __init__(self, logger = Logger(False,False)):
+        self.l = logger
 
     def blending(self, img1, img2):
         pass
@@ -28,19 +29,22 @@ class ImageJoinFactory():
             return ImageJoinHConcat(arg_dict["left_y_offset"],
                                     arg_dict["right_y_offset"],
                                     arg_dict["left_x_offset"],
-                                    arg_dict["right_x_offset"])
+                                    arg_dict["right_x_offset"],
+                                    arg_dict["logger"])
         elif joinType == 2:
             return ImageJoinFeature(arg_dict["ratio"],
                                     arg_dict["min_match"],
                                     arg_dict["smoothing_window_size"],
                                     arg_dict["matching_write"],
                                     arg_dict["static_matrix"],
-                                    arg_dict["static_mask"])
+                                    arg_dict["static_mask"],
+                                    arg_dict["logger"])
         elif joinType == 3:
             return ImageJoinOpenCV(arg_dict["ratio"],
                                    arg_dict["min_match"],
                                    arg_dict["smoothing_window_size"],
-                                   arg_dict["stitchter_type"])
+                                   arg_dict["stitchter_type"],
+                                   arg_dict["logger"])
         elif joinType == 4:
             return ImageJoinCuda(arg_dict)
         
@@ -49,8 +53,8 @@ class ImageJoinFactory():
 
 class ImageJoinHConcat(ImageJoin):
 
-    def __init__(self, left_y_offset = 20, right_y_offset=0, left_x_offset=0, right_x_offset=0):
-        super().__init__()
+    def __init__(self, left_y_offset = 20, right_y_offset=0, left_x_offset=0, right_x_offset=0, logger = None):
+        super().__init__(logger)
         self.left_y_offset = left_y_offset
         self.left_x_offset = left_x_offset
         self.right_y_offset = right_y_offset
@@ -86,17 +90,17 @@ class ImageJoinHConcat(ImageJoin):
     
 class ImageJoinFeature(ImageJoin):
 
-    def __init__(self, ratio=0.85, min_match=10, smoothing_window_size=50, matching_write = False, static_matrix = False, static_mask = False ) :
+    def __init__(self, ratio=0.85, min_match=10, smoothing_window_size=50, matching_write = False, static_matrix = False, static_mask = False , logger = None) :
         self.ratio=ratio
         self.min_match=min_match
         try:
-            self.sift=cv.SIFT_create() #maybe replace wir ORB or AKAZE
+            self.sift=cv.SIFT_create() #maybe replace with ORB or AKAZE
         except AttributeError:
             #for older versions of open cv
             try:
                 self.sift=cv.xfeatures2d.SIFT_create()
             except AttributeError:
-                print("Unsupported CV version, exiting")
+                self.l.fail("Unsupported CV version, exiting")
                 exit(1)
         
         self.smoothing_window_size=smoothing_window_size
@@ -219,7 +223,7 @@ class ImageJoinFeature(ImageJoin):
 
 
 class ImageJoinOpenCV(ImageJoin):
-    def __init__(self, ratio = 0.5, min_match=3, smoothing_window_size = 10, stitchter_type = cv.Stitcher_PANORAMA) :
+    def __init__(self, ratio = 0.5, min_match=3, smoothing_window_size = 10, stitchter_type = cv.Stitcher_PANORAMA, logger = None) :
         self.ratio=ratio
         self.min_match=min_match
         self.stich = cv.Stitcher.create(stitchter_type)
@@ -284,6 +288,7 @@ class ImageJoinCuda(ImageJoin):
         self.WAVE_CORRECT_CHOICES['vert'] = cv.detail.WAVE_CORRECT_VERT
             
     def __init__(self, arg_dict):
+        super().__init__(arg_dict["logger"])
         self.EXPOS_COMP_CHOICES = OrderedDict()
         self.create_EXPOS_COMP_CHOICES()
 
@@ -349,7 +354,7 @@ class ImageJoinCuda(ImageJoin):
             elif self.arg_dict["timelapse"] == "crop":
                 self.timelapse_type = cv.detail.Timelapser_CROP
             else:
-                print("Bad timelapse method")
+                self.l.fail("Bad timelapse method")
                 exit()
         else:
             self.timelapse = False
@@ -360,7 +365,7 @@ class ImageJoinCuda(ImageJoin):
         
         
         
-        super().__init__()
+        
 
     def blending(self, img1, img2):
         frames = [img1, img2]

@@ -29,6 +29,8 @@ class Logger():
                 if os.path.exists(file_URI) and not override:
                     raise NameError("Log File already exists! Try setting override flag")
                 else:
+                    if os.path.exists(file_URI) and override:
+                        os.remove(file_URI)
                     self.file_URI = file_URI
             logging.basicConfig(filename=file_URI, encoding='utf-8', level=level, format='%(asctime)s %(message)s')
             
