@@ -15,46 +15,10 @@ try:
     import traceback
     import time as t
     from parameters import default_list
+    from logger import Logger
 except:
     raise ImportError("Imports failed")
-class Logger():
-    def __init__(self, ros_log = False, console_log = False):
-        self.ros_log = ros_log
-        self.console_log = console_log
 
-    def warning(self, skk):
-        
-        if self.console_log:
-            print("\033[93m {}\033[00m" .format("WARNING:"),"\033[93m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.logwarn(skk)
-       
-    def error(self, skk):
-        if self.console_log:   
-            print("\033[91m {}\033[00m" .format("ERROR:"),"\033[91m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.logerr(skk)
-        
-    def fail(self, skk):
-        if self.console_log: 
-            print("\033[91m {}\033[00m" .format("FATAL:"),"\033[91m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.logfatal(skk)
-    def passing(self, skk): 
-        if self.console_log: 
-            print("\033[92m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.loginfo(skk)
-    def passingblue(self, skk): 
-        if self.console_log: 
-            print("\033[96m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.loginfo(skk)
-    def info(self, skk): 
-        if self.console_log: 
-            print("\033[94m {}\033[00m" .format("Info:"),"\033[94m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.loginfo(skk)
 
 class CameraJoin(object):
     def __init__(self,dict):

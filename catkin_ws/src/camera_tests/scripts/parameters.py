@@ -111,7 +111,7 @@ default_list = {
             },
         "features": {
             "ros_param": "~features",
-            "default": "akaze" #best for CUDA
+            "default": "orb" #best for CUDA: orb
             },
         "matcher": {
             "ros_param": "~matcher",

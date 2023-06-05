@@ -2,10 +2,11 @@ import cv2
 import image_join as join
 import traceback
 from parameters import default_list
-
+from logger import Logger
 
 
 if __name__ == "__main__":
+    l = Logger(False, True)
     runtime_list = dict()
     runtime_list.update({"join_type": 2})
     runtime_list.update({"verbose":True})
