@@ -22,10 +22,10 @@ except:
 
 class CameraJoin(object):
     def __init__(self,dict):
-        try:
-            self.l = Logger(ros_log=dict["ros_log"], console_log=dict["console_log"])
-        except:
-            Logger(True, True).self.l.fail("Failed to initialize Logger, exiting")
+        if dict["logger"] is not None:
+            self.l = dict["logger"]
+        else:
+            Logger(ros_log = True, console_log=True).fail("Failed to initialize Logger, exiting")
             exit(1)
         for k,v in dict.items():
             if k in default_list:

@@ -6,8 +6,9 @@ from logger import Logger
 
 
 if __name__ == "__main__":
-    l = Logger(False, True)
+    l= Logger(False, True)
     runtime_list = dict()
+    runtime_list.update({"logger": l})
     runtime_list.update({"join_type": 2})
     runtime_list.update({"verbose":True})
     runtime_list.update({"direct_import": False})
