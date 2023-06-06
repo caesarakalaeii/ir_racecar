@@ -1,6 +1,10 @@
+'''
+Utility dictionary to give accsess to parameters from ros launch and setting defaults
+~ indicates a private parameter and will adjust to the namespace
+'''
 import cv2
 
-#~ indicates a private parameter and will adjust to the namespace
+
 
 default_list = {
 
