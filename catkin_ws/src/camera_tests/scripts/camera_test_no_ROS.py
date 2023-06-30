@@ -61,7 +61,7 @@ if __name__ == "__main__":
                     l.error("Joining failed: %s"%e)
                     continue
             elif tries == 0:
-                print("Waiting", end= "")
+                print("Waiting", end= "") #TODO replace to actual waiting animation
             elif tries == 100:
                 print("")
             else: 
