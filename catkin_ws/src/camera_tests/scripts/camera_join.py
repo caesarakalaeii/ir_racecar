@@ -25,16 +25,16 @@ except:
 
 class CameraJoin(object):
     def __init__(self,dict):
-        try:
-            if dict["logger"] is not None:
-                self.l = dict["logger"]
-            else:
-                Logger(ros_log = True, console_log=True).fail("Failed to initialize Logger")
-        except KeyError:
-            self.l = Logger(ros_log=True, console_log=True)
-            self.l.fail("using fallback logger")
-        except Exception as e:
-            Logger(ros_log = True, console_log=True).fail(f"Exeption occured: {e}")
+        #try:
+        #    if dict["logger"] is not None:
+        #        self.l = dict["logger"]
+        #    else:
+        #        Logger(ros_log = True, console_log=True).fail("Failed to initialize Logger")
+        #except KeyError:
+        self.l = Logger(ros_log=True, console_log=True)
+        self.l.fail("using fallback logger")
+        #except Exception as e:
+        #   print (e.message, e.args)
         for k,v in dict.items():
             if k in default_list:
                 continue
