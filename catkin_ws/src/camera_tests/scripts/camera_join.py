@@ -252,7 +252,7 @@ if __name__ == '__main__':
     runtime_list.update({"console_log":True})
     
     l = Logger(False, runtime_list["console_log"])
-    value_list = dict() #used to store values from ros parameters
+    value_list = {} #used to store values from ros parameters
     for k,v in default_list.items():
         value_list.update({k:v["default"]})
     # ROS Image message -> OpenCV2 image converter
