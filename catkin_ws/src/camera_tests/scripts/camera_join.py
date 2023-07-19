@@ -29,8 +29,7 @@ class CameraJoin(object):
             if dict["logger"] is not None:
                 self.l = dict["logger"]
             else:
-                Logger(ros_log = True, console_log=True).fail("Failed to initialize Logger, exiting")
-                exit(1)
+                Logger(ros_log = True, console_log=True).fail("Failed to initialize Logger")
         except KeyError:
             self.l = Logger(ros_log=True, console_log=True)
         for k,v in dict.items():
