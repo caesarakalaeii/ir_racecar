@@ -32,6 +32,7 @@ class CameraJoin(object):
                 Logger(ros_log = True, console_log=True).fail("Failed to initialize Logger")
         except KeyError:
             self.l = Logger(ros_log=True, console_log=True)
+            self.l.fail("using fallback logger")
         for k,v in dict.items():
             if k in default_list:
                 continue
