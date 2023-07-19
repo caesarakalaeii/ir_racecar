@@ -9,7 +9,7 @@ import time
 
 
 try:
-    import image_join as ij
+    from image_join_factory import ImageJoinFactory
     import rospy
     from sensor_msgs.msg import Image
     import numpy as np
@@ -25,11 +25,14 @@ except:
 
 class CameraJoin(object):
     def __init__(self,dict):
-        if dict["logger"] is not None:
-            self.l = dict["logger"]
-        else:
-            Logger(ros_log = True, console_log=True).fail("Failed to initialize Logger, exiting")
-            exit(1)
+        try:
+            if dict["logger"] is not None:
+                self.l = dict["logger"]
+            else:
+                Logger(ros_log = True, console_log=True).fail("Failed to initialize Logger, exiting")
+                exit(1)
+        except KeyError:
+            self.l = Logger(ros_log=True, console_log=True)
         for k,v in dict.items():
             if k in default_list:
                 continue
@@ -49,7 +52,7 @@ class CameraJoin(object):
         self.VERBOSE = dict["verbose"]
         self.ENCODING = dict["encoding"]
         self.timing = dict["timing"]
-        self.stitcher = ij.ImageJoinFactory.create_instance(dict)
+        self.stitcher = ImageJoinFactory.create_instance(dict)
         self.pub = rospy.Publisher(dict["publish"], Image, queue_size= dict["queue_size"])
         if not dict["direct_import"]:
             rospy.Subscriber(dict["camera1"], Image, self.image1_callback)
@@ -91,7 +94,7 @@ class CameraJoin(object):
                 self.l.fail("couldn't fetch frame from cam2")
                 continue
             if self.timing:
-                self.l.info("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
+                self.l.info(f"Time between calls: {(self.times[0]-self.times[1])*1000} ms")
                 self.times[1] = self.times[0]
             self.image_join()
     
@@ -104,7 +107,7 @@ class CameraJoin(object):
             self.l.info(str)
         if self.timing:
             self.times[0] = t.time()
-            self.l.info("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
+            self.l.info(f"Time between calls: {(self.times[0]-self.times[1])*1000} ms")
             self.times[1] = self.times[0]
         self.set_image(msg, 1)
 
@@ -138,7 +141,7 @@ class CameraJoin(object):
                 self.image2 = self.bridge.imgmsg_to_cv2(image, self.ENCODING)
             if self.timing:
                 end_set  =t.time()
-                self.l.info("Time to set image:", (end_set-start_set)*1000, "ms")
+                self.l.info(f"Time to set image:{(end_set-start_set)*1000} ms")
             if not self.thread.is_alive():
                 self.thread.start()
         except Exception as e:
@@ -160,7 +163,7 @@ class CameraJoin(object):
                     self.image1 = np.asarray(self.image1)
                     if self.timing:
                         end_img2 = t.time()
-                        self.l.info("Time to convert img1: ", (end_img2-start_img2)*1000, "ms")
+                        self.l.info(f"Time to convert img1: {(end_img2-start_img2)*1000} ms")
                     if self.VERBOSE:
                         self.l.passing("Converting Image 1 to ndarray")
                 if not isinstance(self.image2, np.ndarray):
@@ -169,7 +172,7 @@ class CameraJoin(object):
                     self.image2 = np.asarray(self.image2)
                     if self.timing:
                         end_img2 = t.time()
-                        self.l.info("Time to convert img2: ", (end_img2-start_img2)*1000, "ms")
+                        self.l.info(f"Time to convert img2: {(end_img2-start_img2)*1000} ms")
                     if self.VERBOSE:
                         self.l.passing("Converting Image 2 to ndarray")
                 if self.timing:
@@ -204,7 +207,7 @@ class CameraJoin(object):
                     self.image_joined = old_image
                 if self.timing:
                     end_blending = t.time()
-                    self.l.info("Time to blend:", (end_blending-start_blending)*1000, "ms")
+                    self.l.info(f"Time to blend: {(end_blending-start_blending)*1000}ms")
                 try:
                     self.publish_image(self.image_joined)
                 except:
@@ -231,7 +234,7 @@ class CameraJoin(object):
         self.pub.publish(image_joined_msg)
         if self.timing:
             publish_end = t.time()
-            self.l.info("Time to publish: ", (publish_end-publish_start)*1000, "ms")
+            self.l.info(f"Time to publish: {(publish_end-publish_start)*1000} ms")
 
 
         
@@ -291,7 +294,7 @@ if __name__ == '__main__':
                 value_list.update({k: default_list[k]})
                 l.warning("Parameter {} has not been found, using default".format(v["ros_param"].replace('~', '')) )
                
-
+        value_list.update({"logger":l})
         my_subs = CameraJoin(value_list)
         l.passing("Node started with given Params")
         my_subs.loop()

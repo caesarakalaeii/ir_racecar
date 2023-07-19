@@ -199,5 +199,6 @@ default_list = {
             },
         "rangewidth": {
             "ros_param": "~rangewidth",
-            "default": -1}
+            "default": -1},
+        "logger": None
     }
