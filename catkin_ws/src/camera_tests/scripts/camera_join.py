@@ -5,6 +5,9 @@ This program is sensitive to changes in camera orientation, run it without the s
 Camera 1 needs to be the right camera!
 """
 
+import time
+
+
 try:
     import image_join as ij
     import rospy
@@ -40,6 +43,9 @@ class CameraJoin(object):
         self.image2 = None
         self.bridge = CvBridge()
         self.image_joined = None
+        self.frame_count = 0
+        self.start_time = 0
+        self.prev_frame_time = 0
         self.VERBOSE = dict["verbose"]
         self.ENCODING = dict["encoding"]
         self.timing = dict["timing"]
@@ -88,6 +94,9 @@ class CameraJoin(object):
                 self.l.info("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
                 self.times[1] = self.times[0]
             self.image_join()
+    
+
+    
 
     def image1_callback(self,msg):
         if self.VERBOSE:
@@ -168,6 +177,27 @@ class CameraJoin(object):
                 old_image = self.image_joined
                 try:
                     self.image_joined = self.stitcher.blending(self.image1, self.image2)
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    # time when we finish processing for this frame
+                    new_frame_time = time.time()
+
+                    # Calculating the fps
+
+                    # fps will be number of frame processed in given time frame
+                    # since their will be most of time error of 0.001 second
+                    # we will be subtracting it to get more accurate result
+                    fps = 1/(new_frame_time-self.prev_frame_time)
+                    self.prev_frame_time = new_frame_time
+
+                    # converting the fps into integer
+                    fps = int(fps)
+
+                    # converting the fps to string so that we can display it on frame
+                    # by using putText function
+                    fps = str(fps)
+
+                    # putting the FPS count on the frame
+                    cv2.putText(self.image_joined, fps, (7, 70), font, 3, (100, 255, 0), 3, cv2.LINE_AA)
                 except Exception as e:
                     if self.VERBOSE:
                         self.l.warning("Stale image will be used: {}".format(e))

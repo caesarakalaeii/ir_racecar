@@ -8,4 +8,4 @@ catkin_ws/src/camera_tests/scripts/__pycache__*
 .vscode*
 catkin_ws/src/usb_cam*
 build*
-catkin_ws/src/camera_tests/scripts/getFPS_ROS.py
+
