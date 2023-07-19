@@ -294,7 +294,7 @@ if __name__ == '__main__':
                 value_list.update({k: default_list[k]})
                 l.warning("Parameter {} has not been found, using default".format(v["ros_param"].replace('~', '')) )
                
-        value_list.update({"logger":l})
+        value_list["logger"]=l
         my_subs = CameraJoin(value_list)
         l.passing("Node started with given Params")
         my_subs.loop()
