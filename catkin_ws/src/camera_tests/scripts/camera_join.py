@@ -253,7 +253,7 @@ if __name__ == '__main__':
     
     l = Logger(False, runtime_list["console_log"])
     value_list = dict() #used to store values from ros parameters
-    for k,v in default_list:
+    for k,v in default_list.items():
         value_list.update({k:v["default"]})
     # ROS Image message -> OpenCV2 image converter
     from cv_bridge import CvBridge, CvBridgeError
