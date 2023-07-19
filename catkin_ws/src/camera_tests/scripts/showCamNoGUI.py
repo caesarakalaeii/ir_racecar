@@ -1,13 +1,11 @@
 import cv2
 import numpy as np
-import asyncio
-from tkinter import *
 
 
 
 
 
-async def showCam(cam):
+def showCam(cam):
     
 
     cv2.namedWindow("test")
@@ -26,7 +24,7 @@ async def showCam(cam):
 def makeDiff(frame, oldFrame):
     return cv2.absdiff(frame, oldFrame)
 
-async def showDiff(frame, oldFrame):
+def showDiff(frame, oldFrame):
     if (oldFrame[0,0] == None):
         return frame
     #diff = cv2.absdiff(frame, oldFrame)
@@ -39,7 +37,7 @@ async def showDiff(frame, oldFrame):
     return frame
     
 
-async def showTransDiff(frame, oldFrame):
+def showTransDiff(frame, oldFrame):
     if (oldFrame[0,0] == None):
         return frame
     #diff = cv2.absdiff(frame, oldFrame)
@@ -54,7 +52,7 @@ async def showTransDiff(frame, oldFrame):
 def makeCanny(frame):
     return cv2.Canny(frame, 50, 150)
 
-async def showCanny(frame):
+def showCanny(frame):
     canny = makeCanny(frame)
     cv2.imshow("Canny",canny )
     return canny
@@ -83,7 +81,30 @@ def makeTrans(frame):
     dst = cv2.warpPerspective(border,M,(1080,700)) # warp image to adjust for lens distortion
     return dst
 
-async def showTrans(frame):
+def makeThresh(dst, thrs):
+        dst[dst < thrs] = 0 # make image monochrome
+        dst[dst >= thrs] = 255
+       
+        return dst
+
+def showOtsuThreshDiff(frame, oldFrame, name):
+    if (oldFrame[0,0] == None):
+            return
+    otsu_threshold, image_result = cv2.threshold(
+        makeDiff(frame, oldFrame), 0, 255, cv2.THRESH_OTSU,
+    )
+    print(f"Otsu threshhold is {otsu_threshold}")
+    cv2.imshow(name, image_result)
+
+def showThresh(frame, name, thrs):
+        cv2.imshow(name,makeThresh(frame, thrs))
+def showThreshDiff(frame,oldFrame, name, thrs):
+        if (oldFrame[0,0] == None):
+            return
+        diff = cv2.absdiff(frame, oldFrame)
+        cv2.imshow(name,makeThresh(diff, thrs))
+
+def showTrans(frame):
         row, col = frame.shape[:2]
         #frame = cv2.fastNlMeansDenoising(frame, None, 7, 5, 9) # denoise gaussian noise
         #kernel = np.array([
@@ -102,13 +123,14 @@ async def showTrans(frame):
         
         cv2.imshow("transformed",dst)
         return dst
-async def showCannyTrans(frame):
+
+def showCannyTrans(frame):
     dst = makeTrans(frame)
     cv2.imshow("CannyTrans", dst)
     return dst
 
 
-async def main():
+def main():
 
 
     
@@ -117,7 +139,7 @@ async def main():
     oldFrame = np.array([[None, None],[None, None]])
     oldDst = np.array([[None, None],[None, None]])
     oldtransDiff = np.array([[None, None],[None, None]])
-    
+    threshhold = 100
     while True:
         
         k = cv2.waitKey(1)
@@ -125,13 +147,22 @@ async def main():
             # ESC pressed
             print("Escape hit, closing...")
             break
-        frame = await showCam(cam)
+        if k%256 == 119:  
+            threshhold += 1
+            print(f"Threshhold is {threshhold}")
+        if k%256 == 115:    
+            threshhold -= 1
+            print(f"Threshhold is {threshhold}")
+            
+        frame = showCam(cam)
         try:
-            oldDst = await showTrans(frame)
-            oldFrame = await showDiff(frame, oldFrame)
-            oldtransDiff = await showTransDiff(oldDst, oldtransDiff)
-            canny = await showCanny(frame)
-            cannytrans= await showCannyTrans(canny)
+            #oldDst = showTrans(frame)
+            showThreshDiff(frame, oldFrame, "threshholdDiff", threshhold)
+            oldFrame = showDiff(frame, oldFrame)
+            showOtsuThreshDiff(frame, oldFrame,"otsudiff")
+            #oldtransDiff = showTransDiff(oldDst, oldtransDiff)
+            #canny = showCanny(frame)
+            #cannytrans= showCannyTrans(canny)
             
         except:
             continue
@@ -139,5 +170,5 @@ async def main():
 
 if __name__ == "__main__":
     
-    asyncio.run(main())
+    main()
 

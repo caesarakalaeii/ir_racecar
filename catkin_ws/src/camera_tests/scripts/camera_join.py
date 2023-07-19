@@ -14,67 +14,27 @@ try:
     import threading
     import traceback
     import time as t
-    import parameters as p
+    from parameters import default_list
+    from logger import Logger
 except:
     raise ImportError("Imports failed")
-class Logger():
-    def __init__(self, ros_log = False, console_log = False):
-        self.ros_log = ros_log
-        self.console_log = console_log
 
-    def warning(self, skk):
-        
-        if self.console_log:
-            print("\033[93m {}\033[00m" .format("WARNING:"),"\033[93m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.logwarn(skk)
-       
-    def error(self, skk):
-        if self.console_log:   
-            print("\033[91m {}\033[00m" .format("ERROR:"),"\033[91m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.logerr(skk)
-        
-    def fail(self, skk):
-        if self.console_log: 
-            print("\033[91m {}\033[00m" .format("FATAL:"),"\033[91m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.logfatal(skk)
-    def passing(self, skk): 
-        if self.console_log: 
-            print("\033[92m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.loginfo(skk)
-    def passingblue(self, skk): 
-        if self.console_log: 
-            print("\033[96m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.loginfo(skk)
-    def info(self, skk): 
-        if self.console_log: 
-            print("\033[94m {}\033[00m" .format("Info:"),"\033[94m {}\033[00m" .format(skk))
-        if self.ros_log:
-            rospy.loginfo(skk)
 
 class CameraJoin(object):
-    
-    
-    
-    
     def __init__(self,dict):
-        try:
-            self.l = Logger(ros_log=dict["ros_log"], console_log=dict["console_log"])
-        except:
-            Logger(True, True).self.l.fail("Failed to initialize Logger, exiting")
+        if dict["logger"] is not None:
+            self.l = dict["logger"]
+        else:
+            Logger(ros_log = True, console_log=True).fail("Failed to initialize Logger, exiting")
             exit(1)
         for k,v in dict.items():
-            if k in p.default_list:
+            if k in default_list:
                 continue
             else: self.l.warning("Not recognized key ", k, " and value ", v)
-        for k,v in p.default_list.items():
+        for k,v in default_list.items():
             if k in dict:
                 continue
-            else: dict.update({k:v})
+            else: dict.update({k:v["default"]})
         self.times = [0,0]
         self.image1 = None
         self.image2 = None
@@ -108,7 +68,7 @@ class CameraJoin(object):
             self.thread.start()
             
         
-        print("Node sucessfully initialized")
+        self.l.info("Node sucessfully initialized")
 
     
     def direct_import_loop(self):
@@ -125,17 +85,17 @@ class CameraJoin(object):
                 self.l.fail("couldn't fetch frame from cam2")
                 continue
             if self.timing:
-                print("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
+                self.l.info("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
                 self.times[1] = self.times[0]
             self.image_join()
 
     def image1_callback(self,msg):
         if self.VERBOSE:
             str = "Image1 received with encoding: " + msg.encoding
-            print(str)
+            self.l.info(str)
         if self.timing:
             self.times[0] = t.time()
-            print("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
+            self.l.info("Time between calls:", (self.times[0]-self.times[1])*1000, "ms")
             self.times[1] = self.times[0]
         self.set_image(msg, 1)
 
@@ -143,7 +103,7 @@ class CameraJoin(object):
     def image2_callback(self,msg):
         if self.VERBOSE:
             str = "Image2 received with encoding: " + msg.encoding
-            print(str)
+            self.l.info(str)
         self.set_image(msg, 2)
 
     def loop(self):
@@ -169,11 +129,11 @@ class CameraJoin(object):
                 self.image2 = self.bridge.imgmsg_to_cv2(image, self.ENCODING)
             if self.timing:
                 end_set  =t.time()
-                print("Time to set image:", (end_set-start_set)*1000, "ms")
+                self.l.info("Time to set image:", (end_set-start_set)*1000, "ms")
             if not self.thread.is_alive():
                 self.thread.start()
         except Exception as e:
-            print(e)
+            self.l.error(e)
 
 
 
@@ -183,7 +143,7 @@ class CameraJoin(object):
     # Join images
         if self.image1 is not None and self.image2 is not None:
             if self.VERBOSE:
-                print("Joining images")
+                self.l.passing("Joining images")
             try:
                 if not isinstance(self.image1, np.ndarray):
                     if self.timing:
@@ -191,18 +151,18 @@ class CameraJoin(object):
                     self.image1 = np.asarray(self.image1)
                     if self.timing:
                         end_img2 = t.time()
-                        print("Time to convert img1: ", (end_img2-start_img2)*1000, "ms")
+                        self.l.info("Time to convert img1: ", (end_img2-start_img2)*1000, "ms")
                     if self.VERBOSE:
-                        print("Converting Image 1 to ndarray")
+                        self.l.passing("Converting Image 1 to ndarray")
                 if not isinstance(self.image2, np.ndarray):
                     if self.timing:
                         start_img2 = t.time()
                     self.image2 = np.asarray(self.image2)
                     if self.timing:
                         end_img2 = t.time()
-                        print("Time to convert img2: ", (end_img2-start_img2)*1000, "ms")
+                        self.l.info("Time to convert img2: ", (end_img2-start_img2)*1000, "ms")
                     if self.VERBOSE:
-                        print("Converting Image 2 to ndarray")
+                        self.l.passing("Converting Image 2 to ndarray")
                 if self.timing:
                     start_blending = t.time()
                 old_image = self.image_joined
@@ -214,24 +174,24 @@ class CameraJoin(object):
                     self.image_joined = old_image
                 if self.timing:
                     end_blending = t.time()
-                    print("Time to blend:", (end_blending-start_blending)*1000, "ms")
+                    self.l.info("Time to blend:", (end_blending-start_blending)*1000, "ms")
                 try:
                     self.publish_image(self.image_joined)
                 except:
                     pass
                 
             except Exception as e :
-                print(e)
+                self.l.error(e)
         elif self.VERBOSE and self.image1 is None and self.image2 is None:
-            print("Both Images are None")
+            self.l.warning("Both Images are None")
         elif self.VERBOSE and self.image1 is None:
             
-            print("Image 1 is None")
+            self.l.warning("Image 1 is None")
         elif self.VERBOSE and self.image2 is None:
             
-            print("Image 2 is None")
+            self.l.warning("Image 2 is None")
         elif self.VERBOSE:
-            l.info("How did we get here?")
+            self.l.info("How did we get here?")
 
     
     def publish_image(self,image_joined):
@@ -241,7 +201,7 @@ class CameraJoin(object):
         self.pub.publish(image_joined_msg)
         if self.timing:
             publish_end = t.time()
-            print("Time to publish: ", (publish_end-publish_start)*1000, "ms")
+            self.l.info("Time to publish: ", (publish_end-publish_start)*1000, "ms")
 
 
         
@@ -259,50 +219,47 @@ if __name__ == '__main__':
     runtime_list.update({"console_log":True})
     
     l = Logger(False, runtime_list["console_log"])
-    value_list = p.param_list
+    value_list = dict() #used to store values from ros parameters
+    for k,v in default_list:
+        value_list.update({k:v["default"]})
     # ROS Image message -> OpenCV2 image converter
     from cv_bridge import CvBridge, CvBridgeError
     name = 'camera_join' #TODO find a way to make this variable
     rospy.init_node(name, anonymous=True, log_level=rospy.DEBUG)
     l.passing("Starting Node, Fetching params")
-    runtime_list = dict()
-    runtime_list.update({"join_type": 2})
-    runtime_list.update({"verbose":True})
-    runtime_list.update({"direct_import": False})
-    runtime_list.update({"static_matrix": True})
-    runtime_list.update({"timing":False})
-    runtime_list.update({"console_log":True})
     simulate_params = False
     if simulate_params:
         l.warning("Simulating set Parameters, if not launched from a .launch file")
-    print("Available Params:")
+    l.info("Available Params:")
+    if runtime_list["join_type"] == 3 or runtime_list["join_type"] == 4:
+        l.warning("This Jointype is experimental and might result in unstable behavior, using 1 or 2 is recommended")
     param_names = rospy.get_param_names()
     for i in param_names:
         if "camera_join" in i:
             print(i)
-            if not any(True for k in p.default_list if k in i):
+            if not any(True for k in default_list if k in i):
                 l.warning("Param {} was not recognized as a valid parameter and will be ignored!".format(i))
     
-    if not any(True for i in param_names if i in p.param_list.keys()) and simulate_params:
-            for k,v in p.param_list.items():
+    if not any(True for i in param_names if i in default_list.keys()) and simulate_params:
+            for k,v in default_list.items():
                 try:
-                    rospy.set_param(v, runtime_list[k])
+                    rospy.set_param(v["ros_param"], runtime_list[k])
                 except KeyError:
-                    rospy.set_param(v, p.default_list[k])
+                    rospy.set_param(v["ros_param"], v["default"])
     try:
-        for k,v in p.param_list.items():
-            if rospy.has_param(v): #not using the built in default values of rospy for better verbosity
-                value_list.update({k: rospy.get_param(v)})
-                l.passing("Parameter {} has been found and added".format(v.replace('~', '')) )
+        for k,v in default_list.items():
+            if rospy.has_param(v["ros_param"]): #not using the built in default values of rospy for better verbosity
+                value_list.update({k: rospy.get_param(v["ros_param"])})
+                l.passing("Parameter {} has been found and added".format(v["ros_param"].replace('~', '')) )
                 
             elif k in runtime_list:
                 value_list.update({k: runtime_list[k]})
-                l.passingblue("Parameter {} has been found in Runtime list and will be used".format(v.replace('~', '')))
+                l.passingblue("Parameter {} has been found in Runtime list and will be used".format(v["ros_param"].replace('~', '')))
                 
             
             else: 
-                value_list.update({k: p.default_list[k]})
-                l.warning("Parameter {} has not been found, using default".format(v.replace('~', '')) )
+                value_list.update({k: default_list[k]})
+                l.warning("Parameter {} has not been found, using default".format(v["ros_param"].replace('~', '')) )
                
 
         my_subs = CameraJoin(value_list)

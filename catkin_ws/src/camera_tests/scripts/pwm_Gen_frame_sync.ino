@@ -1,73 +1,72 @@
-// Set the PWM frequency (in Hz)
 long input;
 const int TYPE_FREQ = 1;
-const int TYPE_DUTY = 2;
-long clockSpeed = 16000000; // Set to whatever clockspeed the arduino is running at
-long pwmFrequency = 400000; // Works best to avoid stripes on Camera frame
+const int TYPE_DUTY = -2;
+const int TYPE_DEV = -1;
+const int pwmPin = 6; // PWM output pin
+const int triggerPin = 3; // Input pin for triggering
+long pwmFrequency = 13371337; // Works best to avoid stripes on Camera frame
 int pwmDuty = 128;
 int value;
-
-// Set the interrupt pin
-const int interruptPin = 2;
-
-// Set the PWM pin
-const int pwmPin = 3;
-
-// Set a variable indicating whether the PWM is active or not
 bool pwmActive = true;
 
-void setPwmFrequency(long frequency) {
-  // Calculate the prescaler value based on the input frequency
-  int prescaler = clockSpeed / frequency;
-
-  // Set the prescaler value for timer 2 by manipulating the timer registers
-  TCCR2B = (TCCR2B & 0b11111000) | (prescaler & 0x07);
-}
-
-void setPwmDutyCycle(long dutyCycle){
-  pwmDuty = (int) 255*(dutyCycle/100);
-  
-}
-
-// this function is called when the interrupt is triggered
-void handleInterrupt() {
-  // Change the state of the PWM
-  pwmActive = !pwmActive;
-}
+int lastTriggerState = LOW; // Variable to store the previous state of the trigger pin
+bool pwmEnabled = false; // Flag to track PWM enable/disable status
 
 void setup() {
-  // Set the PWM and interrupt pin as output
-  pinMode(pwmPin, OUTPUT);
-  pinMode(interruptPin, INPUT_PULLUP);
-
-  // Set the PWM frequency
-  setPwmFrequency(pwmFrequency);
-
-  // Enable the interrupt for the interrupt pin
-  attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, FALLING);
+  pinMode(pwmPin, OUTPUT); // Set the PWM pin as an output
+  pinMode(triggerPin, INPUT); // Set the trigger pin as an input
 }
 
 void loop() {
-  if (pwmActive) {
-    // Set the PWM value to 128, which corresponds to a duty cycle of 50%.
-    analogWrite(pwmPin, pwmDuty);
+  if(pwmActive){
+  int triggerState = digitalRead(triggerPin); // Read the current state of the trigger pin
+
+  // Check for rising edge on the trigger pin
+  if (triggerState == HIGH && lastTriggerState == LOW) {
+    pwmEnabled = !pwmEnabled; // Toggle the PWM enable/disable status
+
+    if (pwmEnabled) {
+      // Enable PWM on pin 6 with a duty cycle of 50%
+      analogWrite(pwmPin, pwmDuty);
+      Serial.println("PWM Enabled");
+    } else {
+      // Disable PWM on pin 6
+      analogWrite(pwmPin, 0);
+      Serial.println("PWM Disabled");
+    }
   }
-  if (Serial.available() > 0) {
+
+  lastTriggerState = triggerState; // Update the previous trigger state
+
+}
+}
+
+
+void serialEvent(){
     if (Serial.available()) { //for Serial inputs
     input=Serial.parseInt();
+    int input_int = input;
     Serial.print("input read:");
-    Serial.println(input);
-    int type = (int) (input >> 30); //bit shift to access type integer
+    Serial.println(input, BIN);
+    int type = input >> 30;
     input = input << 2;
-    value = input >> 2;
+    value = (int)input >> 2;
+    Serial.print("value is:");
+    Serial.println(value, DEC);
+    Serial.print("type is:");
+    Serial.println(type, DEC);
     if(type == TYPE_FREQ){
-      setPwmFrequency(value);
+      pwmFrequency = value;
+      Serial.print("frequency set");
     }
-    if(type == TYPE_FREQ){
-      setPwmDutyCycle(value);
+    else if(type == TYPE_DUTY){
+      pwmDuty = value;
+      Serial.print("cycle set");
+    }
+    else if(type == TYPE_DEV){
+      pwmActive = !pwmActive;
+      Serial.print("pwmActive changed");
     }
     
   } 
-  }
-  
 }
