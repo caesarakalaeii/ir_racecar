@@ -17,7 +17,7 @@ class ImageJoinFeature(ImageJoin):
         self.ratio=ratio
         self.min_match=min_match
         
-        self.matcher = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
+        self.matcher = cv.BFMatcher(cv.NORM_HAMMING)
         if finder is None:
             try:
                 self.finder=cv.AKAZE_create() #maybe replace with ORB or AKAZE
