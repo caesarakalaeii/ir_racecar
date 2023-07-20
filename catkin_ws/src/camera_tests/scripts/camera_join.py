@@ -255,7 +255,7 @@ if __name__ == '__main__':
     
     l = Logger(False, runtime_list["console_log"])
     value_list = {} #used to store values from ros parameters
-    l.warning(f"{cv2.getCudaEnabledDeviceCount()} cuda enabled devices found")
+    l.warning(f"{cv2.cuda.getCudaEnabledDeviceCount()} cuda enabled devices found")
     for k,v in default_list.items():
         value_list.update({k:v["default"]})
     # ROS Image message -> OpenCV2 image converter
