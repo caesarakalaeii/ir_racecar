@@ -25,14 +25,15 @@ class ImageJoinFactory():
                                     arg_dict["right_x_offset"],
                                     arg_dict["logger"])
         elif joinType == 2:
-            return ImageJoinFeature(arg_dict["ratio"],
-                                    arg_dict["min_match"],
-                                    arg_dict["smoothing_window_size"],
-                                    arg_dict["matching_write"],
-                                    arg_dict["static_matrix"],
-                                    arg_dict["static_mask"],
-                                    arg_dict["logger"],
-                                    arg_dict["finder"])
+            return ImageJoinFeature(ratio=arg_dict["ratio"],
+                                    min_match=arg_dict["min_match"],
+                                    smoothing_window_size=arg_dict["smoothing_window_size"],
+                                    matching_write=arg_dict["matching_write"],
+                                    static_matrix=arg_dict["static_matrix"],
+                                    static_mask=arg_dict["static_mask"],
+                                    logger=arg_dict["logger"],
+                                    finder=arg_dict["finder"],
+                                    matcher=arg_dict["matcher"])
         elif joinType == 3:
             return ImageJoinOpenCV(arg_dict["ratio"],
                                    arg_dict["min_match"],

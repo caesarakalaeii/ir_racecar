@@ -13,12 +13,16 @@ import numpy as np
 
 class ImageJoinFeature(ImageJoin):
 
-    def __init__(self, ratio=0.85, min_match=10, smoothing_window_size=50, matching_write = False, static_matrix = False, static_mask = False , logger = None, finder = None) :
+    def __init__(self, ratio=0.85, min_match=10, smoothing_window_size=50, matching_write = False, static_matrix = False, static_mask = False , logger = None, finder = None, matcher = None) :
         self.ratio=ratio
         self.min_match=min_match
+        self.matcher = matcher
+        if matcher is None:
+            self.matcher = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
         if finder is None:
             try:
                 self.finder=cv.AKAZE_create() #maybe replace with ORB or AKAZE
+                
             except AttributeError:
                 #for older versions of open cv
                 try:
@@ -43,8 +47,8 @@ class ImageJoinFeature(ImageJoin):
     def registration(self,img1,img2):
         kp1, des1 = self.finder.detectAndCompute(img1, None)
         kp2, des2 = self.finder.detectAndCompute(img2, None)
-        matcher = cv.BFMatcher()
-        raw_matches = matcher.knnMatch(des1, des2, k=2)
+        
+        raw_matches = self.matcher.knnMatch(des1, des2, k=2)
         good_points = []
         good_matches=[]
         for m1, m2 in raw_matches:
