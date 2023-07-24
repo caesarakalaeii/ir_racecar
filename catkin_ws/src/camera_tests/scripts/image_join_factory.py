@@ -41,7 +41,7 @@ class ImageJoinFactory():
                                    arg_dict["stitchter_type"],
                                    arg_dict["logger"])
         elif joinType == 4:
-            return ImageJoinCuda(arg_dict)
+            return ImageJoinCuda()
         
         else:
             raise ValueError("JoinType not known, please use either CONCAT = 1, FEATURE = 2, OPENCV = 3, CUDA = 4")

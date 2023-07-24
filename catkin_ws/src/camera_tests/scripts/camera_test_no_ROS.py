@@ -17,10 +17,10 @@ if __name__ == "__main__":
     runtime_list.update({"join_type": 2})
     runtime_list.update({"verbose":True})
     runtime_list.update({"direct_import": False})
-    runtime_list.update({"static_matrix": False})
+    runtime_list.update({"static_matrix": True})
     runtime_list.update({"timing":False})
     runtime_list.update({"console_log":True})
-    runtime_list.update({"finder": cv2.ORB_create(nfeatures=50)})
+    runtime_list.update({"finder": cv2.ORB_create(nfeatures=1000)})
     runtime_list.update({"matcher": cv2.BFMatcher(cv2.NORM_HAMMING)})
     show_windows = True
     for k,v in default_list.items():
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     l.info("Initializing Cam1")
     cam1 = cv2.VideoCapture(0)
     l.info("Initializing Cam2")
-    cam2 = cv2.VideoCapture(2)
+    cam2 = cv2.VideoCapture(1)
     l.info("Cameras initialized, Creating Joiner")
     joiner = ImageJoinFactory.create_instance(runtime_list)
     tries = 0
@@ -51,7 +51,8 @@ if __name__ == "__main__":
             frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY) #uncomment for b/w images
             frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
             if a == False or b == False:
-                raise Exception("Couldnt open Cameras")
+                print(f"Couldnt open Cameras, a:{a} b:{b}")
+                continue
             
             if show_windows:
                 cv2.imshow("Cam1", frame1)

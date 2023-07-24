@@ -16,7 +16,9 @@ class ImageJoinFeature(ImageJoin):
     def __init__(self, ratio=0.85, min_match=10, smoothing_window_size=50, matching_write = False, static_matrix = False, static_mask = False , logger = None, finder = None, matcher = None) :
         self.ratio=ratio
         self.min_match=min_match
-        self.get_matcher()
+        self.matcher = matcher
+        if matcher is None:
+            self.matcher = cv.BFMatcher_create()
         if finder is None:
             try:
                 self.finder=cv.AKAZE_create() #maybe replace with ORB or AKAZE
@@ -38,13 +40,14 @@ class ImageJoinFeature(ImageJoin):
         self.mask_set = False
         self.mask1 = None
         self.mask2 = None
+        self.is_cuda = False
+        if cv.cuda.getCudaEnabledDeviceCount() > 0:
+            cv.setUseOptimized(True)
+            self.is_cuda = True
 
         super().__init__()
 
-    def get_matcher(self):
-        try_cuda = True
-        match_conf = 0.3
-        self.matcher = cv.detail_AffineBestOf2NearestMatcher(False, try_cuda, match_conf)
+    
         
         
 
@@ -96,6 +99,7 @@ class ImageJoinFeature(ImageJoin):
         return cv.merge([mask, mask, mask])
 
     def blending(self,img1,img2):
+        
         if(self.static_matrix and self.matrix_set):
             return self.blending_no_reg(img1, img2, self.H)
         self.H = self.registration(img1,img2)

@@ -135,7 +135,7 @@ def main():
 
     
     
-    cam = cv2.VideoCapture(0)
+    cam = cv2.VideoCapture(1)
     oldFrame = np.array([[None, None],[None, None]])
     oldDst = np.array([[None, None],[None, None]])
     oldtransDiff = np.array([[None, None],[None, None]])

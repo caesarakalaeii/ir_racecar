@@ -13,7 +13,7 @@ class Logger():
         if has_ros:
             self.ros_log = ros_log
         else:
-            self.ros_log = False #set Ros loggin to false if rospy has not been detected
+            self.ros_log = False #set Ros logging to false if rospy has not been detected
         
         self.console_log = console_log
         self.file_logging = file_logging
