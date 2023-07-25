@@ -252,7 +252,8 @@ if __name__ == '__main__':
     runtime_list.update({"static_matrix": True})
     runtime_list.update({"timing":False})
     runtime_list.update({"console_log":True})
-    
+    runtime_list.update({"finder": cv2.ORB_create(nfeatures=100)})
+    runtime_list.update({"matcher":cv2.BFMatcher_create(cv2.NORM_HAMMING)})
     l = Logger(False, runtime_list["console_log"])
     value_list = {} #used to store values from ros parameters
     l.warning(f"{cv2.cuda.getCudaEnabledDeviceCount()} cuda enabled devices found")
