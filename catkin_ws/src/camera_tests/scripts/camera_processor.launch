@@ -25,7 +25,7 @@
     <param name = "publish" value = "joined_image"/>
     <param name = "queue_size" value = "10"/>
     <param name = "verbose" value = "True"/>
-    <param name = "encoding" value = "bgr8"/>
+    <param name = "encoding" value = "mono8"/>
     <param name = "join_type" value = "2"/>
     <param name = "ratio" value = "0.85"/>
     <param name = "min_match" value = "10"/>
