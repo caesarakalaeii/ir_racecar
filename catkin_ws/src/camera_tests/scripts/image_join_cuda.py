@@ -4,6 +4,7 @@ Improved runtime and more options thanks to static matrix option.
 Recommended for most uses.
 Homography uses RANSAC
 Default for finding features is SIFT
+TODO: Time transformation to gpuMat, and transformation it self
 '''
 
 
