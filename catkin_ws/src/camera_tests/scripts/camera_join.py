@@ -138,11 +138,9 @@ class CameraJoin(object):
                 start_set = t.time()
         
             if number == 1:
-                image1 = self.bridge.imgmsg_to_cv2(image, image.encoding)
-                self.image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY) #uncomment for b/w images
+                self.image1 = self.bridge.imgmsg_to_cv2(image, self.ENCODING)
             elif number == 2:
-                image2 = self.bridge.imgmsg_to_cv2(image, image.encoding)
-                self.image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
+                self.image2 = self.bridge.imgmsg_to_cv2(image, self.ENCODING)
             if self.timing:
                 end_set  =t.time()
                 self.l.info(f"Time to set image:{(end_set-start_set)*1000} ms")
