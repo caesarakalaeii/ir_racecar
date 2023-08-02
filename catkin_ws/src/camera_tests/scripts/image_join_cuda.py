@@ -8,6 +8,7 @@ TODO: Time transformation to gpuMat, and transformation it self
 '''
 
 
+import time
 from image_join import ImageJoin
 import cv2 as cv
 import numpy as np
@@ -130,11 +131,22 @@ class ImageJoinCuda(ImageJoin):
                 self.mask2 = mask2
                 self.mask_set = True
             try:
-                warped = cv.cuda.warpPerspective(src = cv.cuda.GpuMat(img2), M = cv.UMat(H), dsize = (width_panorama, height_panorama)).download()
+                start = time.time()
+                src = cv.cuda.GpuMat(img2)
+                convertGPU = time.time()
+                M = cv.UMat(H)
+                convertUMat = time.time()
+                warped = cv.cuda.warpPerspective(src, M, dsize = (width_panorama, height_panorama)).download()
+                warponGPU = time.time()
                 panorama2 = warped * mask2
+                end = time.time()
+                print(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {convertUMat-warponGPU}\nTotal elapsed time: {end-start}\n")
             except:
                 raise Exception("Couldn't match images.")
+            start = time.time()
             result=cv.cuda.add(panorama1,panorama2)
+            end = time.time()
+            print(f"Time to add images on GPU: {end-start}")
 
             rows, cols = np.where(result[:, :] != 0)
             min_row, max_row = np.min(rows), np.max(rows) + 1
