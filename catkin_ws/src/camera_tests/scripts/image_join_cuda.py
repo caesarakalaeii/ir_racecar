@@ -28,13 +28,12 @@ class ImageJoinCuda(ImageJoin):
             self.matcher = cv.BFMatcher_create()
         if finder == None:
             try:
-                self.finder=cv.cuda.ORB_create() #maybe replace with ORB or AKAZE
-                self.logger.info("Using CUDA ORB")
+                self.finder=cv.cuda.ORB.create() #maybe replace with ORB or AKAZE
+                
             except AttributeError:
                 #for older versions of open cv
                 try:
                     self.finder=cv.xfeatures2d.SIFT_create()
-                    self.logger.info("Using Standard SIFT")
                 except AttributeError:
                     self.l.fail("Unsupported CV version, exiting")
                     exit(1)
@@ -58,16 +57,8 @@ class ImageJoinCuda(ImageJoin):
         
 
     def registration(self,img1,img2):
-        
-        img1_UMat = cv.cuda_GpuMat()
-        img1_UMat.upload(img1)
-        img2_UMat = cv.cuda_GpuMat()
-        self.logger.info(f"{type(img1_UMat)},{type(img1)}")
-        img2_UMat.upload(img2)
-        kp1 = self.finder.detect(img1)
-        kp2 = self.finder.detect(img2)
-        kp1, des1 = self.finder.compute(img1, kp1)
-        kp2, des2 = self.finder.compute(img2, kp2)
+        kp1, des1 = self.finder.detectAndCompute(img1, None)
+        kp2, des2 = self.finder.detectAndCompute(img2, None)
         
         raw_matches = self.matcher.knnMatch(des1, des2, k=2)
         good_points = []

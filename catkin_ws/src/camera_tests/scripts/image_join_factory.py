@@ -48,7 +48,7 @@ class ImageJoinFactory():
                                  static_matrix=arg_dict["static_matrix"],
                                  static_mask=arg_dict["static_mask"],
                                  logger=arg_dict["logger"],
-                                 finder=None,
+                                 finder=arg_dict["finder"],
                                  matcher=arg_dict["matcher"])
         
         else:
