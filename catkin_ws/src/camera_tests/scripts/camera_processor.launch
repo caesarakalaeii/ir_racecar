@@ -20,8 +20,8 @@
   </node>
 
   <node pkg="camera_tests" type="camera_join.py" name="camera_join" output="screen">
-    <param name = "camera1" value = "usb_cam1/image_raw" />
-    <param name = "camera2" value = "usb_cam2/image_raw" />
+    <param name = "camera1" value = "usb_cam1/image_mono" />
+    <param name = "camera2" value = "usb_cam2/image_mono" />
     <param name = "publish" value = "joined_image"/>
     <param name = "queue_size" value = "10"/>
     <param name = "verbose" value = "True"/>
@@ -31,7 +31,7 @@
     <param name = "min_match" value = "10"/>
     <param name = "smoothing_window_size" value = "200"/>
     <param name = "matching_write" value = "False"/>
-    <param name = "static_matrix" value = "False"/>
+    <param name = "static_matrix" value = "True"/>
     <param name = "static_mask" value = "False"/>
     <param name = "direct_import" value = "False"/>
     <param name = "timing" value = "False"/>
