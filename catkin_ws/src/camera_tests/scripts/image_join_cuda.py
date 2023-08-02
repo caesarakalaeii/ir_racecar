@@ -105,7 +105,9 @@ class ImageJoinCuda(ImageJoin):
         
         if(self.static_matrix and self.matrix_set):
             return self.blending_no_reg(img1, img2, self.H)
+        t = time.time()
         self.H = self.registration(img1,img2)
+        self.logger.info(f"Time for registration: {time.time()-t}")
         return self.blending_no_reg(img1, img2, self.H)
         
     
@@ -126,15 +128,19 @@ class ImageJoinCuda(ImageJoin):
             if self.static_mask and self.mask_set:
                 mask1 = self.mask1
             else:
+                mask_time = time.time()
                 mask1 = self.create_mask(img1,img2,version='left_image', hasDepth=False)
+                self.logger.info(f"Time for masking: {time.time()-mask_time}")
                 self.mask1 =  mask1
             panorama1[0:img1.shape[0], 0:img1.shape[1]] = img1
             panorama1 = panorama1*mask1 #evtl durch primitive ersetzen (a*b)
             if self.static_mask and self.mask_set:
                 mask2 = self.mask2
             else:
+                mask_time = time.time()
                 mask2 = self.create_mask(img1,img2,version='right_image', hasDepth=False)
                 self.mask2 = mask2
+                self.logger.info(f"Time for masking: {time.time()-mask_time}")
                 self.mask_set = True
             try:
                 start = time.time()
