@@ -212,7 +212,7 @@ class ImageJoinCuda(ImageJoin):
             warponGPU = time.time()
             panorama2 = warped * mask2
             end = time.time()
-            self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {convertUMat-warponGPU}\nTotal elapsed time: {end-start}\n")
+            self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {warponGPU-convertUMat}\nTotal elapsed time: {end-start}\n")
             expected_time += convertGPU-start
             expected_time += convertUMat-convertGPU
             expected_time += warponGPU-convertUMat
