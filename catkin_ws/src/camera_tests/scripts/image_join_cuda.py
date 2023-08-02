@@ -21,6 +21,7 @@ class ImageJoinCuda(ImageJoin):
         self.ratio=ratio
         self.min_match=min_match
         self.matcher = matcher
+        self.logger = logger
         if logger is None:
             logger = Logger(True, True)
         if matcher is None:
