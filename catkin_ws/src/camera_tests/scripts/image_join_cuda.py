@@ -28,7 +28,7 @@ class ImageJoinCuda(ImageJoin):
             self.matcher = cv.BFMatcher_create()
         if finder == None:
             try:
-                self.finder=cv.cuda_ORB.create() #maybe replace with ORB or AKAZE
+                self.finder=cv.cuda.ORB_create() #maybe replace with ORB or AKAZE
                 self.logger.info("Using CUDA ORB")
             except AttributeError:
                 #for older versions of open cv
