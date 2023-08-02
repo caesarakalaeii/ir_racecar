@@ -183,6 +183,8 @@ class ImageJoinCuda(ImageJoin):
             min_row, max_row = np.min(rows), np.max(rows) + 1
             min_col, max_col = np.min(cols), np.max(cols) + 1
             final_result = result[min_row:max_row, min_col:max_col, :]
+            a = time.time()
+            self.logger.info(f"Time for NP stuff: {a-end}")
         total_end  = time.time()
         self.logger.info(f"Total time to join: {total_end-total_start}")
         return cv.convertScaleAbs(final_result)
