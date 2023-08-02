@@ -57,8 +57,8 @@ class ImageJoinCuda(ImageJoin):
         
 
     def registration(self,img1,img2):
-        kp1, des1 = self.finder.detectAndCompute(img1, None)
-        kp2, des2 = self.finder.detectAndCompute(img2, None)
+        kp1, des1 = self.finder.detectAndCompute(cv.cuda.GpuMat(img1), None)
+        kp2, des2 = self.finder.detectAndCompute(cv.cuda.GpuMat(img2), None)
         
         raw_matches = self.matcher.knnMatch(des1, des2, k=2)
         good_points = []
