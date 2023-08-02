@@ -23,7 +23,7 @@ class ImageJoinCuda(ImageJoin):
         self.matcher = matcher
         self.logger = logger
         if logger == None:
-            logger = Logger(True, True)
+            self.logger = Logger(True, True)
         if matcher == None:
             self.matcher = cv.BFMatcher_create()
         if finder == None:
