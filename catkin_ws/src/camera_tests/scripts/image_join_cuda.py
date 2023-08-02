@@ -22,11 +22,11 @@ class ImageJoinCuda(ImageJoin):
         self.min_match=min_match
         self.matcher = matcher
         self.logger = logger
-        if logger is None:
+        if logger == None:
             logger = Logger(True, True)
-        if matcher is None:
+        if matcher == None:
             self.matcher = cv.BFMatcher_create()
-        if finder is None:
+        if finder == None:
             try:
                 self.finder=cv.AKAZE_create() #maybe replace with ORB or AKAZE
                 
