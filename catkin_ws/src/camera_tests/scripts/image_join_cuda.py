@@ -123,8 +123,11 @@ class ImageJoinCuda(ImageJoin):
             depth = img1.shape[2]
         except:
             depth = 0
+        self.logger.info(f"Time for preparation: {time.time()-total_start}")
         if depth == 0:
+            pano = time.time()
             panorama1 = np.zeros((height_panorama, width_panorama))
+            self.logger.info(f"Time for creating panorama: {time.time()-pano}")
             if self.static_mask and self.mask_set:
                 mask1 = self.mask1
             else:
@@ -132,8 +135,10 @@ class ImageJoinCuda(ImageJoin):
                 mask1 = self.create_mask(img1,img2,version='left_image', hasDepth=False)
                 self.logger.info(f"Time for masking: {time.time()-mask_time}")
                 self.mask1 =  mask1
+            pano = time.time()
             panorama1[0:img1.shape[0], 0:img1.shape[1]] = img1
             panorama1 = panorama1*mask1 #evtl durch primitive ersetzen (a*b)
+            self.logger.info(f"Time for masking panorama1: {time.time()-pano}")
             if self.static_mask and self.mask_set:
                 mask2 = self.mask2
             else:
@@ -168,11 +173,15 @@ class ImageJoinCuda(ImageJoin):
             self.logger.info(f"Time for NP stuff: {a-end}")
 
         else :
+            pano = time.time()
             panorama1 = np.zeros((height_panorama, width_panorama, depth))
+            self.logger.info(f"Time for creating panorama: {time.time()-pano}")
+            mask_time = time.time()
             mask1 = self.create_mask(img1,img2,version='left_image')
             panorama1[0:img1.shape[0], 0:img1.shape[1], :] = img1
             panorama1 = panorama1*mask1
             mask2 = self.create_mask(img1,img2,version='right_image')
+            self.logger.info(f"Time for masking: {time.time()-mask_time}")
             start = time.time()
             src = cv.cuda.GpuMat(img2)
             convertGPU = time.time()
