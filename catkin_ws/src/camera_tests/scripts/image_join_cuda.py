@@ -129,7 +129,7 @@ class ImageJoinCuda(ImageJoin):
                 mask1 = self.create_mask(img1,img2,version='left_image', hasDepth=False)
                 self.mask1 =  mask1
             panorama1[0:img1.shape[0], 0:img1.shape[1]] = img1
-            panorama1 = cv.cuda.multiply(panorama1,mask1)
+            panorama1 = cv.cuda.multiply(panorama1,mask1) #evtl durch primitive ersetzen (a*b)
             if self.static_mask and self.mask_set:
                 mask2 = self.mask2
             else:
@@ -150,7 +150,7 @@ class ImageJoinCuda(ImageJoin):
             except:
                 raise Exception("Couldn't match images.")
             start = time.time()
-            result=cv.cuda.add(panorama1,panorama2)
+            result=cv.cuda.add(panorama1,panorama2) #evtl durch primitive ersetzen (a+b)
             end = time.time()
             self.logger.info(f"Time to add images on GPU: {end-start}")
 
