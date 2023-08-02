@@ -200,9 +200,11 @@ class ImageJoinCuda(ImageJoin):
             mask_time = time.time()
             mask1 = self.create_mask(img1,img2,version='left_image')
             panorama1[0:img1.shape[0], 0:img1.shape[1], :] = img1
+            multi = time.time()
             panorama1 = panorama1*mask1
+            onemask = time.time()
             mask2 = self.create_mask(img1,img2,version='right_image')
-            self.logger.info(f"Time for masking: {time.time()-mask_time}")
+            self.logger.info(f"Total time for masking: {time.time()-mask_time}\nTime for one mask: {time.time()- onemask}\nTime to multiply: {onemask-multi}")
             expected_time += time.time()-mask_time
             start = time.time()
             src = cv.cuda.GpuMat(img2)
