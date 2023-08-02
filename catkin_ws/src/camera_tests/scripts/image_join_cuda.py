@@ -120,6 +120,7 @@ class ImageJoinCuda(ImageJoin):
         
     
     def blending_no_reg(self,img1,img2, H):
+        expected_time = 0
         total_start  = time.time()
         height_img1 = img1.shape[0]
         width_img1 = img1.shape[1]
@@ -131,10 +132,12 @@ class ImageJoinCuda(ImageJoin):
             depth = img1.shape[2]
         except:
             depth = 0
+        expected_time += time.time()-total_start
         self.logger.info(f"Time for preparation: {time.time()-total_start}")
         if depth == 0:
             pano = time.time()
             panorama1 = np.zeros((height_panorama, width_panorama))
+            expected_time += time.time()-pano
             self.logger.info(f"Time for creating panorama: {time.time()-pano}")
             if self.static_mask and self.mask_set:
                 mask1 = self.mask1
@@ -142,11 +145,13 @@ class ImageJoinCuda(ImageJoin):
                 mask_time = time.time()
                 mask1 = self.create_mask(img1,img2,version='left_image', hasDepth=False)
                 self.logger.info(f"Time for masking: {time.time()-mask_time}")
+                expected_time += time.time()-mask_time
                 self.mask1 =  mask1
             pano = time.time()
             panorama1[0:img1.shape[0], 0:img1.shape[1]] = img1
             panorama1 = panorama1*mask1 #evtl durch primitive ersetzen (a*b)
             self.logger.info(f"Time for masking panorama1: {time.time()-pano}")
+            expected_time += time.time()-pano
             if self.static_mask and self.mask_set:
                 mask2 = self.mask2
             else:
@@ -154,6 +159,7 @@ class ImageJoinCuda(ImageJoin):
                 mask2 = self.create_mask(img1,img2,version='right_image', hasDepth=False)
                 self.mask2 = mask2
                 self.logger.info(f"Time for masking: {time.time()-mask_time}")
+                expected_time += time.time()-mask_time
                 self.mask_set = True
             try:
                 start = time.time()
@@ -165,13 +171,17 @@ class ImageJoinCuda(ImageJoin):
                 warponGPU = time.time()
                 panorama2 = warped * mask2
                 end = time.time()
-                self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertGPU-convertUMat}\nTime to warp on GPU: {convertUMat-warponGPU}\nTotal elapsed time: {end-start}\n")
+                self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {warponGPU-convertUMat}\nTotal elapsed time: {end-start}\n")
+                expected_time += convertGPU-start
+                expected_time += convertUMat-convertGPU
+                expected_time += warponGPU-convertUMat
             except:
                 raise Exception("Couldn't match images.")
             start = time.time()
             result=panorama1+panorama2 #evtl durch primitive ersetzen (a+b)
             end = time.time()
             self.logger.info(f"Time to add images on CPU: {end-start}")
+            expected_time += end-start
 
             rows, cols = np.where(result[:, :] != 0)
             min_row, max_row = np.min(rows), np.max(rows) + 1
@@ -179,17 +189,20 @@ class ImageJoinCuda(ImageJoin):
             final_result = result[min_row:max_row, min_col:max_col]
             a = time.time()
             self.logger.info(f"Time for NP stuff: {a-end}")
+            expected_time += end-a
 
         else :
             pano = time.time()
             panorama1 = np.zeros((height_panorama, width_panorama, depth))
             self.logger.info(f"Time for creating panorama: {time.time()-pano}")
+            expected_time += time.time()-pano
             mask_time = time.time()
             mask1 = self.create_mask(img1,img2,version='left_image')
             panorama1[0:img1.shape[0], 0:img1.shape[1], :] = img1
             panorama1 = panorama1*mask1
             mask2 = self.create_mask(img1,img2,version='right_image')
             self.logger.info(f"Time for masking: {time.time()-mask_time}")
+            expected_time += time.time()-mask_time
             start = time.time()
             src = cv.cuda.GpuMat(img2)
             convertGPU = time.time()
@@ -200,16 +213,21 @@ class ImageJoinCuda(ImageJoin):
             panorama2 = warped * mask2
             end = time.time()
             self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {convertUMat-warponGPU}\nTotal elapsed time: {end-start}\n")
+            expected_time += convertGPU-start
+            expected_time += convertUMat-convertGPU
+            expected_time += warponGPU-convertUMat
             start = time.time()
             result=panorama1+panorama2
-            end = time.time()
-            self.logger.info(f"Time to add images on GPU: {end-start}")
+            end_some = time.time()
+            self.logger.info(f"Time to add images on GPU: {end_some-start}")
+            expected_time += end_some-start
             rows, cols = np.where(result[:, :, 0] != 0)
             min_row, max_row = np.min(rows), np.max(rows) + 1
             min_col, max_col = np.min(cols), np.max(cols) + 1
             final_result = result[min_row:max_row, min_col:max_col, :]
             a = time.time()
-            self.logger.info(f"Time for NP stuff: {a-end}")
+            self.logger.info(f"Time for NP stuff: {a-end_some}")
+            expected_time += a-end_some
         total_end  = time.time()
-        self.logger.info(f"Total time to join: {total_end-total_start}")
+        self.logger.info(f"Total time to join: {total_end-total_start}, expectet time: {expected_time}")
         return cv.convertScaleAbs(final_result)
