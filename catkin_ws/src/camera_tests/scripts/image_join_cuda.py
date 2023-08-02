@@ -10,8 +10,10 @@ TODO: Time transformation to gpuMat, and transformation it self
 
 import time
 from image_join import ImageJoin
+from logger import Logger
 import cv2 as cv
 import numpy as np
+
 
 class ImageJoinCuda(ImageJoin):
 
@@ -19,6 +21,8 @@ class ImageJoinCuda(ImageJoin):
         self.ratio=ratio
         self.min_match=min_match
         self.matcher = matcher
+        if logger is None:
+            logger = Logger(True, True)
         if matcher is None:
             self.matcher = cv.BFMatcher_create()
         if finder is None:
@@ -140,13 +144,13 @@ class ImageJoinCuda(ImageJoin):
                 warponGPU = time.time()
                 panorama2 = warped * mask2
                 end = time.time()
-                print(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {convertUMat-warponGPU}\nTotal elapsed time: {end-start}\n")
+                self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {convertUMat-warponGPU}\nTotal elapsed time: {end-start}\n")
             except:
                 raise Exception("Couldn't match images.")
             start = time.time()
             result=cv.cuda.add(panorama1,panorama2)
             end = time.time()
-            print(f"Time to add images on GPU: {end-start}")
+            self.logger.info(f"Time to add images on GPU: {end-start}")
 
             rows, cols = np.where(result[:, :] != 0)
             min_row, max_row = np.min(rows), np.max(rows) + 1
@@ -159,10 +163,20 @@ class ImageJoinCuda(ImageJoin):
             panorama1[0:img1.shape[0], 0:img1.shape[1], :] = img1
             panorama1 = cv.cuda.multiply(panorama1,mask1)
             mask2 = self.create_mask(img1,img2,version='right_image')
-            warped = cv.cuda.warpPerspective(src = cv.cuda.GpuMat(img2), M = cv.UMat(H), dsize = (width_panorama, height_panorama)).download()
+            start = time.time()
+            src = cv.cuda.GpuMat(img2)
+            convertGPU = time.time()
+            M = cv.UMat(H)
+            convertUMat = time.time()
+            warped = cv.cuda.warpPerspective(src, M, dsize = (width_panorama, height_panorama)).download()
+            warponGPU = time.time()
             panorama2 = warped * mask2
+            end = time.time()
+            self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {convertUMat-warponGPU}\nTotal elapsed time: {end-start}\n")
+            start = time.time()
             result=cv.cuda.add(panorama1,panorama2)
-
+            end = time.time()
+            self.logger.info(f"Time to add images on GPU: {end-start}")
             rows, cols = np.where(result[:, :, 0] != 0)
             min_row, max_row = np.min(rows), np.max(rows) + 1
             min_col, max_col = np.min(cols), np.max(cols) + 1
