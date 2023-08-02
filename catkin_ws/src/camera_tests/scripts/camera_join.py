@@ -158,7 +158,7 @@ class CameraJoin(object):
         if self.image1 is not None and self.image2 is not None:
             if self.VERBOSE:
                 self.l.passing("Joining images")
-            try:
+            #try:
                 if not isinstance(self.image1, np.ndarray):
                     if self.timing:
                         start_img2 = t.time()
@@ -215,8 +215,8 @@ class CameraJoin(object):
                 except:
                     pass
                 
-            except Exception as e :
-                self.l.error(e)
+            #except Exception as e :
+            #    self.l.error(e)
         elif self.VERBOSE and self.image1 is None and self.image2 is None:
             self.l.warning("Both Images are None")
         elif self.VERBOSE and self.image1 is None:
