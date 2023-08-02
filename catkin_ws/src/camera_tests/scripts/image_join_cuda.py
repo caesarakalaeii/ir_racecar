@@ -61,10 +61,10 @@ class ImageJoinCuda(ImageJoin):
         img1_UMat.upload(img1)
         img2_UMat = cv.cuda.GpuMat()
         img2_UMat.upload(img2)
-        kp1 = self.finder.detect(img1)
-        kp2 = self.finder.detect(img2)
-        kp1, des1 = self.finder.compute(img1, kp1)
-        kp2, des2 = self.finder.compute(img2, kp2)
+        kp1 = self.finder.detect(img1_UMat)
+        kp2 = self.finder.detect(img2_UMat)
+        kp1, des1 = self.finder.compute(img1_UMat, kp1)
+        kp2, des2 = self.finder.compute(img2_UMat, kp2)
         
         raw_matches = self.matcher.knnMatch(des1, des2, k=2)
         good_points = []
