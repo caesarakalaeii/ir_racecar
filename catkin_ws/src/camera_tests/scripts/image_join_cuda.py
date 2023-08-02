@@ -28,7 +28,7 @@ class ImageJoinCuda(ImageJoin):
             self.matcher = cv.BFMatcher_create()
         if finder == None:
             try:
-                self.finder=cv.AKAZE_create() #maybe replace with ORB or AKAZE
+                self.finder=cv.cuda.ORB.create() #maybe replace with ORB or AKAZE
                 
             except AttributeError:
                 #for older versions of open cv
@@ -101,11 +101,11 @@ class ImageJoinCuda(ImageJoin):
             mask[:, barrier + offset:] = 1
             time_masking = time.time() 
         if not hasDepth:
-            r = cv.merge([mask])
+            r = cv.cuda.merge([cv.cuda.GpuMat(mask)]).download()
             self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time.time()-time_masking}")
             return r
 
-        r = cv.merge([mask, mask, mask])
+        r = cv.cuda.merge([cv.cuda.GpuMat(mask), cv.cuda.GpuMat(mask), cv.cuda.GpuMat(mask)]).download
         #self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time.time()-time_masking}")
         return r
 
@@ -149,7 +149,7 @@ class ImageJoinCuda(ImageJoin):
                 self.mask1 =  mask1
             pano = time.time()
             panorama1[0:img1.shape[0], 0:img1.shape[1]] = img1
-            panorama1 = panorama1*mask1 #evtl durch primitive ersetzen (a*b)
+            panorama1 = cv.cuda.multiply(panorama1,mask1).download() #evtl durch primitive ersetzen (a*b)
             self.logger.info(f"Time for masking panorama1: {time.time()-pano}")
             expected_time += time.time()-pano
             if self.static_mask and self.mask_set:
@@ -185,8 +185,8 @@ class ImageJoinCuda(ImageJoin):
             log_time = time.time()
             self.logger.info(f"Time to log and print: {log_time-end}")
             rows, cols = np.where(result[:, :] != 0)
-            min_row, max_row = np.min(rows), np.max(rows) + 1
-            min_col, max_col = np.min(cols), np.max(cols) + 1
+            min_row, max_row = cv.cuda.min(rows), cv.cuda.max(rows) + 1
+            min_col, max_col = cv.cuda.min(cols), cv.cuda.max(cols) + 1
             final_result = result[min_row:max_row, min_col:max_col]
             a = time.time()
             self.logger.info(f"Time for NP stuff: {a-end}")
