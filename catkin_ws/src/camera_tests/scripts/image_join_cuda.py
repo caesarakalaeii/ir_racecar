@@ -222,6 +222,8 @@ class ImageJoinCuda(ImageJoin):
             end_some = time.time()
             self.logger.info(f"Time to add images on GPU: {end_some-start}")
             expected_time += end_some-start
+            log_time = time.time()
+            self.logger.info(f"Time to log and print: {log_time-end_some}")
             rows, cols = np.where(result[:, :, 0] != 0)
             min_row, max_row = np.min(rows), np.max(rows) + 1
             min_col, max_col = np.min(cols), np.max(cols) + 1
