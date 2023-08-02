@@ -34,6 +34,7 @@ class ImageJoinCuda(ImageJoin):
                 #for older versions of open cv
                 try:
                     self.finder=cv.xfeatures2d.SIFT_create()
+                    self.logger.info("Using Standard SIFT")
                 except AttributeError:
                     self.l.fail("Unsupported CV version, exiting")
                     exit(1)
