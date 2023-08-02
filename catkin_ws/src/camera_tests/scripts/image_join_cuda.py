@@ -110,6 +110,7 @@ class ImageJoinCuda(ImageJoin):
         
     
     def blending_no_reg(self,img1,img2, H):
+        total_start  = time.time()
         height_img1 = img1.shape[0]
         width_img1 = img1.shape[1]
         width_img2 = img2.shape[1]
@@ -182,4 +183,6 @@ class ImageJoinCuda(ImageJoin):
             min_row, max_row = np.min(rows), np.max(rows) + 1
             min_col, max_col = np.min(cols), np.max(cols) + 1
             final_result = result[min_row:max_row, min_col:max_col, :]
+        total_end  = time.time()
+        self.logger.info(f"Total time to join: {total_end-total_start}")
         return cv.convertScaleAbs(final_result)
