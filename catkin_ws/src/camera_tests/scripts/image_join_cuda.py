@@ -57,8 +57,10 @@ class ImageJoinCuda(ImageJoin):
         
 
     def registration(self,img1,img2):
-        img1_UMat = cv.cuda.GpuMat(img1)
-        img2_UMat = cv.cuda.GpuMat(img2)
+        img1_UMat = cv.cuda.GpuMat()
+        img1_UMat.upload(img1)
+        img2_UMat = cv.cuda.GpuMat()
+        img2_UMat.upload(img2)
         kp1 = self.finder.detect(img1)
         kp2 = self.finder.detect(img2)
         kp1, des1 = self.finder.compute(img1, kp1)
