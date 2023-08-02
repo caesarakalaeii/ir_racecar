@@ -102,11 +102,11 @@ class ImageJoinCuda(ImageJoin):
             time_masking = time.time() 
         if not hasDepth:
             r = cv.merge([mask])
-            self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time_masking-time.time()}")
+            self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time.time()-time_masking}")
             return r
 
         r = cv.merge([mask, mask, mask])
-        self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time_masking-time.time()}")
+        self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time.time()-time_masking}")
         return r
 
     def blending(self,img1,img2):
