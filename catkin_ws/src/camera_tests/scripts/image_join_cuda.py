@@ -129,7 +129,7 @@ class ImageJoinCuda(ImageJoin):
                 mask1 = self.create_mask(img1,img2,version='left_image', hasDepth=False)
                 self.mask1 =  mask1
             panorama1[0:img1.shape[0], 0:img1.shape[1]] = img1
-            panorama1 = cv.cuda.multiply(panorama1,mask1) #evtl durch primitive ersetzen (a*b)
+            panorama1 = panorama1*mask1 #evtl durch primitive ersetzen (a*b)
             if self.static_mask and self.mask_set:
                 mask2 = self.mask2
             else:
@@ -150,20 +150,22 @@ class ImageJoinCuda(ImageJoin):
             except:
                 raise Exception("Couldn't match images.")
             start = time.time()
-            result=cv.cuda.add(panorama1,panorama2) #evtl durch primitive ersetzen (a+b)
+            result=panorama1+panorama2 #evtl durch primitive ersetzen (a+b)
             end = time.time()
-            self.logger.info(f"Time to add images on GPU: {end-start}")
+            self.logger.info(f"Time to add images on CPU: {end-start}")
 
             rows, cols = np.where(result[:, :] != 0)
             min_row, max_row = np.min(rows), np.max(rows) + 1
             min_col, max_col = np.min(cols), np.max(cols) + 1
             final_result = result[min_row:max_row, min_col:max_col]
+            a = time.time()
+            self.logger.info(f"Time for NP stuff: {a-end}")
 
         else :
             panorama1 = np.zeros((height_panorama, width_panorama, depth))
             mask1 = self.create_mask(img1,img2,version='left_image')
             panorama1[0:img1.shape[0], 0:img1.shape[1], :] = img1
-            panorama1 = cv.cuda.multiply(panorama1,mask1)
+            panorama1 = panorama1*mask1
             mask2 = self.create_mask(img1,img2,version='right_image')
             start = time.time()
             src = cv.cuda.GpuMat(img2)
@@ -176,7 +178,7 @@ class ImageJoinCuda(ImageJoin):
             end = time.time()
             self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {convertUMat-warponGPU}\nTotal elapsed time: {end-start}\n")
             start = time.time()
-            result=cv.cuda.add(panorama1,panorama2)
+            result=panorama1+panorama2
             end = time.time()
             self.logger.info(f"Time to add images on GPU: {end-start}")
             rows, cols = np.where(result[:, :, 0] != 0)
