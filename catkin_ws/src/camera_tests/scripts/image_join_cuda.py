@@ -82,6 +82,7 @@ class ImageJoinCuda(ImageJoin):
             return H
 
     def create_mask(self,img1,img2,version, hasDepth = True):
+        start_time = time.time()
         height_img1 = img1.shape[0]
         width_img1 = img1.shape[1]
         width_img2 = img2.shape[1]
@@ -90,16 +91,23 @@ class ImageJoinCuda(ImageJoin):
         offset = int(self.smoothing_window_size / 2)
         barrier = img1.shape[1] - int(self.smoothing_window_size / 2)
         mask = np.zeros((height_panorama, width_panorama))
+        preparation = time.time()
         if version== 'left_image':
             mask[:, barrier - offset:barrier + offset ] = np.tile(np.linspace(1, 0, 2 * offset ).T, (height_panorama, 1))
             mask[:, :barrier - offset] = 1
+            time_masking = time.time() 
         else:
             mask[:, barrier - offset :barrier + offset ] = np.tile(np.linspace(0, 1, 2 * offset ).T, (height_panorama, 1))
             mask[:, barrier + offset:] = 1
+            time_masking = time.time() 
         if not hasDepth:
-            return cv.merge([mask])
+            r = cv.merge([mask])
+            self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time_masking-time.time()}")
+            return r
 
-        return cv.merge([mask, mask, mask])
+        r = cv.merge([mask, mask, mask])
+        self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time_masking-time.time()}")
+        return r
 
     def blending(self,img1,img2):
         
