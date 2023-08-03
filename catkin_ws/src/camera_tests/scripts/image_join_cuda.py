@@ -100,7 +100,7 @@ class ImageJoinCuda(ImageJoin):
             mask[:, barrier - offset :barrier + offset ] = np.tile(np.linspace(0, 1, 2 * offset ).T, (height_panorama, 1))
             mask[:, barrier + offset:] = 1
             time_masking = time.time() 
-        stream = cv2.cuda.Stream()
+        stream = cv.cuda.Stream()
         if not hasDepth:
             s = mask.size()
             mat = cv.cuda_GpuMat(s)
