@@ -188,8 +188,8 @@ class ImageJoinCuda(ImageJoin):
             log_time = time.time()
             self.logger.info(f"Time to log and print: {log_time-end}")
             rows, cols = np.where(result[:, :] != 0)
-            min_row, max_row = cv.cuda.min(rows), cv.cuda.max(rows) + 1
-            min_col, max_col = cv.cuda.min(cols), cv.cuda.max(cols) + 1
+            min_row, max_row = np.min(rows), np.max(rows) + 1
+            min_col, max_col = np.min(cols), np.max(cols) + 1
             final_result = result[min_row:max_row, min_col:max_col]
             a = time.time()
             self.logger.info(f"Time for NP stuff: {a-end}")
@@ -230,8 +230,8 @@ class ImageJoinCuda(ImageJoin):
             log_time = time.time()
             self.logger.info(f"Time to log and print: {log_time-end_some}")
             rows, cols = np.where(result[:, :, 0] != 0)
-            min_row, max_row = cv.cuda.min(rows), cv.cuda.max(rows) + 1
-            min_col, max_col = cv.cuda.min(cols), cv.cuda.max(cols) + 1
+            min_row, max_row = np.min(rows), np.max(rows) + 1
+            min_col, max_col = np.min(cols), np.max(cols) + 1
             final_result = result[min_row:max_row, min_col:max_col, :]
             a = time.time()
             self.logger.info(f"Time for NP stuff: {a-end_some}")
