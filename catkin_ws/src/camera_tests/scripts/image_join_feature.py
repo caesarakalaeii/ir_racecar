@@ -21,7 +21,7 @@ class ImageJoinFeature(ImageJoin):
             self.matcher = cv.BFMatcher_create()
         if finder is None:
             try:
-                self.finder=cv.ORB_create(nfeatures=100) #maybe replace with ORB or AKAZE
+                self.finder=cv.ORB_create(nfeatures=1000) #maybe replace with ORB or AKAZE
                 
             except AttributeError:
                 #for older versions of open cv
