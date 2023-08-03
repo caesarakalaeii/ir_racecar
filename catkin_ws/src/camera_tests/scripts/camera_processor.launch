@@ -31,8 +31,8 @@
     <param name = "min_match" value = "10"/>
     <param name = "smoothing_window_size" value = "300"/>
     <param name = "matching_write" value = "False"/>
-    <param name = "static_matrix" value = "True"/>
-    <param name = "static_mask" value = "True"/>
+    <param name = "static_matrix" value = "False"/>
+    <param name = "static_mask" value = "False"/>
     <param name = "direct_import" value = "False"/>
     <param name = "timing" value = "False"/>
   </node>
