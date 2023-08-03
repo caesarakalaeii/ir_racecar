@@ -102,13 +102,13 @@ class ImageJoinCuda(ImageJoin):
             time_masking = time.time() 
         stream = cv.cuda.Stream()
         if not hasDepth:
-            s = mask.size()
+            s = mask.size
             mat = cv.cuda_GpuMat(s)
             mat.upload(mask, stream)
             r = cv.cuda.merge(mat)
             self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time.time()-time_masking}")
             return r
-        s = mask.size()
+        s = mask.size
         mat = cv.cuda_GpuMat(s)
         mat.upload([mask,mask,mask],stream)
         r = cv.cuda.merge(cv.cuda.GpuMat(mat))
