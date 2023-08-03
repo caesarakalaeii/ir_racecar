@@ -296,7 +296,7 @@ if __name__ == '__main__':
             
             else: 
                 value_list.update({k: default_list[k]})
-                l.warning(f"Parameter {v['ros_param'].replace('~', '')} has not been found, using default with value {default_list[k]['default']}")
+                l.warning(f"Parameter {v['ros_param'].replace('~', '')} has not been found, using default with value {default_list[k]}")
                
         value_list["logger"]=l
         my_subs = CameraJoin(value_list)
