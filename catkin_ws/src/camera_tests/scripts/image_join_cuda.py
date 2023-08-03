@@ -204,7 +204,7 @@ class ImageJoinCuda(ImageJoin):
             mask1 = self.create_mask(img1,img2,version='left_image')
             panorama1[0:img1.shape[0], 0:img1.shape[1], :] = img1
             multi = time.time()
-            panorama1 = cv.cuda.multiply(panorama1,mask1)
+            panorama1 = panorama1*mask1
             onemask = time.time()
             mask2 = self.create_mask(img1,img2,version='right_image')
             self.logger.info(f"Total time for masking: {time.time()-mask_time}\nTime for one mask: {time.time()- onemask}\nTime to multiply: {onemask-multi}")
@@ -223,15 +223,15 @@ class ImageJoinCuda(ImageJoin):
             expected_time += convertUMat-convertGPU
             expected_time += warponGPU-convertUMat
             start = time.time()
-            result=cv.cuda.add(panorama1,panorama2)
+            result= panorama1+panorama2
             end_some = time.time()
             self.logger.info(f"Time to add images on GPU: {end_some-start}")
             expected_time += end_some-start
             log_time = time.time()
             self.logger.info(f"Time to log and print: {log_time-end_some}")
             rows, cols = np.where(result[:, :, 0] != 0)
-            min_row, max_row = np.min(rows), np.max(rows) + 1
-            min_col, max_col = np.min(cols), np.max(cols) + 1
+            min_row, max_row = cv.cuda.min(rows), cv.cuda.max(rows) + 1
+            min_col, max_col = cv.cuda.min(cols), cv.cuda.max(cols) + 1
             final_result = result[min_row:max_row, min_col:max_col, :]
             a = time.time()
             self.logger.info(f"Time for NP stuff: {a-end_some}")
