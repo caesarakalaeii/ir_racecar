@@ -29,7 +29,7 @@
     <param name = "join_type" value = "4"/>
     <param name = "ratio" value = "0.85"/>
     <param name = "min_match" value = "10"/>
-    <param name = "smoothing_window_size" value = "200"/>
+    <param name = "smoothing_window_size" value = "300"/>
     <param name = "matching_write" value = "False"/>
     <param name = "static_matrix" value = "True"/>
     <param name = "static_mask" value = "True"/>
