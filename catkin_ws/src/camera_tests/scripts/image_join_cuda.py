@@ -152,7 +152,7 @@ class ImageJoinCuda(ImageJoin):
                 self.mask1 =  mask1
             pano = time.time()
             panorama1[0:img1.shape[0], 0:img1.shape[1]] = img1
-            panorama1 = panorama1*mask1 #evtl durch primitive ersetzen (a*b)
+            panorama1 = cv.cuda.multiply(panorama1,mask1) #evtl durch primitive ersetzen (a*b)
             self.logger.info(f"Time for masking panorama1: {time.time()-pano}")
             expected_time += time.time()-pano
             if self.static_mask and self.mask_set:
@@ -172,7 +172,7 @@ class ImageJoinCuda(ImageJoin):
                 convertUMat = time.time()
                 warped = cv.cuda.warpPerspective(src, M, dsize = (width_panorama, height_panorama)).download()
                 warponGPU = time.time()
-                panorama2 = warped*mask2
+                panorama2 = cv.cuda.multiply(warped,mask2)
                 end = time.time()
                 self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {warponGPU-convertUMat}\nTotal elapsed time: {end-start}\n")
                 expected_time += convertGPU-start
@@ -181,9 +181,9 @@ class ImageJoinCuda(ImageJoin):
             except:
                 raise Exception("Couldn't match images.")
             start = time.time()
-            result=panorama1+panorama2 #evtl durch primitive ersetzen (a+b)
+            result=cv.cuda.add(panorama1,panorama2) #evtl durch primitive ersetzen (a+b)
             end = time.time()
-            self.logger.info(f"Time to add images on CPU: {end-start}")
+            self.logger.info(f"Time to add images on GPU: {end-start}")
             expected_time += end-start
             log_time = time.time()
             self.logger.info(f"Time to log and print: {log_time-end}")
