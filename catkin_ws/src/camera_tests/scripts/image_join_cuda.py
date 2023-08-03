@@ -214,7 +214,7 @@ class ImageJoinCuda(ImageJoin):
             convertGPU = time.time()
             M = cv.UMat(H)
             convertUMat = time.time()
-            warped = cv.cuda.warpPerspective(src, M, dsize = (width_panorama, height_panorama)).download()
+            warped = cv.cuda.warpPerspective(src, M, dsize = (width_panorama, height_panorama))
             warponGPU = time.time()
             panorama2 = cv.cuda.multiply(warped,mask2)
             end = time.time()
@@ -223,7 +223,7 @@ class ImageJoinCuda(ImageJoin):
             expected_time += convertUMat-convertGPU
             expected_time += warponGPU-convertUMat
             start = time.time()
-            result=panorama1+panorama2
+            result=cv.cuda.add(panorama1,panorama2).download()
             end_some = time.time()
             self.logger.info(f"Time to add images on GPU: {end_some-start}")
             expected_time += end_some-start
