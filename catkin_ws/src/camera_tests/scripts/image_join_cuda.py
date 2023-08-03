@@ -12,6 +12,7 @@ import time
 from image_join import ImageJoin
 from logger import Logger
 import cv2 as cv
+import cupy as cp
 import numpy as np
 
 
@@ -187,10 +188,26 @@ class ImageJoinCuda(ImageJoin):
             expected_time += end-start
             log_time = time.time()
             self.logger.info(f"Time to log and print: {log_time-end}")
-            rows, cols = np.where(result[:, :] != 0)
-            min_row, max_row = np.min(rows), np.max(rows) + 1
-            min_col, max_col = np.min(cols), np.max(cols) + 1
-            final_result = result[min_row:max_row, min_col:max_col]
+            result_gpu = cp.array(result)
+
+            # Find non-zero indices on the GPU
+            rows_gpu, cols_gpu = cp.where(result_gpu[:, :] != 0)
+
+            # Transfer indices back to the host (CPU)
+            rows = cp.asnumpy(rows_gpu)
+            cols = cp.asnumpy(cols_gpu)
+
+            # Calculate min and max row/column indices
+            min_row = rows.min()
+            max_row = rows.max() + 1
+            min_col = cols.min()
+            max_col = cols.max() + 1
+
+            # Extract the subarray using GPU
+            final_result_gpu = result_gpu[min_row:max_row, min_col:max_col]
+
+            # Transfer the result back to the host (CPU)
+            final_result = cp.asnumpy(final_result_gpu)
             a = time.time()
             self.logger.info(f"Time for NP stuff: {a-end}")
             expected_time += end-a
@@ -229,10 +246,26 @@ class ImageJoinCuda(ImageJoin):
             expected_time += end_some-start
             log_time = time.time()
             self.logger.info(f"Time to log and print: {log_time-end_some}")
-            rows, cols = np.where(result[:, :, 0] != 0)
-            min_row, max_row = np.min(rows), np.max(rows) + 1
-            min_col, max_col = np.min(cols), np.max(cols) + 1
-            final_result = result[min_row:max_row, min_col:max_col, :]
+            result_gpu = cp.array(result)
+
+            # Find non-zero indices on the GPU
+            rows_gpu, cols_gpu = cp.where(result_gpu[:, :] != 0)
+
+            # Transfer indices back to the host (CPU)
+            rows = cp.asnumpy(rows_gpu)
+            cols = cp.asnumpy(cols_gpu)
+
+            # Calculate min and max row/column indices
+            min_row = rows.min()
+            max_row = rows.max() + 1
+            min_col = cols.min()
+            max_col = cols.max() + 1
+
+            # Extract the subarray using GPU
+            final_result_gpu = result_gpu[min_row:max_row, min_col:max_col]
+
+            # Transfer the result back to the host (CPU)
+            final_result = cp.asnumpy(final_result_gpu)
             a = time.time()
             self.logger.info(f"Time for NP stuff: {a-end_some}")
             expected_time += a-end_some
