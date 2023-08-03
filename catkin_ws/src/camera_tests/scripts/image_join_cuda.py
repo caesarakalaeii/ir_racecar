@@ -108,10 +108,7 @@ class ImageJoinCuda(ImageJoin):
             r = cv.cuda.merge(mat)
             self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time.time()-time_masking}")
             return r
-        s = mask.size
-        mat = cv.cuda_GpuMat(s)
-        mat.upload(np.array([mask,mask,mask]),stream)
-        r = cv.cuda.merge(cv.cuda.GpuMat(mat))
+        r = np.merge([mask,mask,mask])
         #self.logger.info(f"Time to prepare: {preparation-start_time}\nTime to Mask: {time_masking-preparation}\nTime to merge{time.time()-time_masking}")
         return r
 
