@@ -7,13 +7,15 @@ Default for finding features is SIFT
 TODO: Time transformation to gpuMat, and transformation it self
 '''
 
-
-import time
-from image_join import ImageJoin
-from logger import Logger
-import cv2 as cv
-import cupy as cp
-import numpy as np
+try:
+    import time
+    from image_join import ImageJoin
+    from logger import Logger
+    import cv2 as cv
+    import cupy as cp
+    import numpy as np
+except ImportError:
+    pass
 
 
 class ImageJoinCuda(ImageJoin):
