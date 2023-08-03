@@ -275,7 +275,7 @@ if __name__ == '__main__':
         if "camera_join" in i:
             print(i)
             if not any(True for k in default_list if k in i):
-                l.warning("Param {} was not recognized as a valid parameter and will be ignored!".format(i))
+                l.warning(f"Param {i} was not recognized as a valid parameter and will be ignored!")
     
     if not any(True for i in param_names if i in default_list.keys()) and simulate_params:
             for k,v in default_list.items():
@@ -287,16 +287,16 @@ if __name__ == '__main__':
         for k,v in default_list.items():
             if rospy.has_param(v["ros_param"]): #not using the built in default values of rospy for better verbosity
                 value_list.update({k: rospy.get_param(v["ros_param"])})
-                l.passing("Parameter {} has been found and added".format(v["ros_param"].replace('~', '')) )
+                l.passing(f"Parameter {v['ros_param'].replace('~', '')} has been found and added with value {rospy.get_param(v['ros_param'])}")
                 
             elif k in runtime_list:
                 value_list.update({k: runtime_list[k]})
-                l.passingblue("Parameter {} has been found in Runtime list and will be used".format(v["ros_param"].replace('~', '')))
+                l.passingblue(f"Parameter {v['ros_param'].replace('~', '')} has been found in Runtime list and will be used with value {runtime_list[k]}")
                 
             
             else: 
                 value_list.update({k: default_list[k]})
-                l.warning("Parameter {} has not been found, using default".format(v["ros_param"].replace('~', '')) )
+                l.warning(f"Parameter {v['ros_param'].replace('~', '')} has not been found, using default with value {default_list[k]}")
                
         value_list["logger"]=l
         my_subs = CameraJoin(value_list)
