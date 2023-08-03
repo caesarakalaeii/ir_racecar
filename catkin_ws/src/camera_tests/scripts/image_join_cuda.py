@@ -204,7 +204,7 @@ class ImageJoinCuda(ImageJoin):
             mask1 = self.create_mask(img1,img2,version='left_image')
             panorama1[0:img1.shape[0], 0:img1.shape[1], :] = img1
             multi = time.time()
-            panorama1 = panorama1*mask1
+            panorama1 = cv.cuda.multiply(panorama1,mask1)
             onemask = time.time()
             mask2 = self.create_mask(img1,img2,version='right_image')
             self.logger.info(f"Total time for masking: {time.time()-mask_time}\nTime for one mask: {time.time()- onemask}\nTime to multiply: {onemask-multi}")
@@ -216,7 +216,7 @@ class ImageJoinCuda(ImageJoin):
             convertUMat = time.time()
             warped = cv.cuda.warpPerspective(src, M, dsize = (width_panorama, height_panorama)).download()
             warponGPU = time.time()
-            panorama2 = warped * mask2
+            panorama2 = cv.cuda.multiply(warped,mask2)
             end = time.time()
             self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {warponGPU-convertUMat}\nTotal elapsed time: {end-start}\n")
             expected_time += convertGPU-start
