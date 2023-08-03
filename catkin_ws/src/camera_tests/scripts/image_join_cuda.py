@@ -14,7 +14,7 @@ try:
     import cv2 as cv
     import cupy as cp
     import numpy as np
-except ImportError:
+except:
     pass
 
 
