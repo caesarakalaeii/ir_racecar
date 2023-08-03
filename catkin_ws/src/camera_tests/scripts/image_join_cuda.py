@@ -216,8 +216,7 @@ class ImageJoinCuda(ImageJoin):
             convertUMat = time.time()
             warped = cv.cuda.warpPerspective(src, M, dsize = (width_panorama, height_panorama)).download()
             warponGPU = time.time()
-            mask2_mat = cv.UMat(mask2)
-            panorama2 = cv.cuda.multiply(warped,mask2_mat)
+            panorama2 = cv.cuda.multiply(warped,mask2)
             end = time.time()
             self.logger.info(f"Time to transform to GPUMat: {convertGPU-start}\nTime to transform to UMat: {convertUMat-convertGPU}\nTime to warp on GPU: {warponGPU-convertUMat}\nTotal elapsed time: {end-start}\n")
             expected_time += convertGPU-start
