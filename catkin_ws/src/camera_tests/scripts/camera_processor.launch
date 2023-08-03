@@ -4,7 +4,7 @@
  
   <node name="usb_cam1" pkg="usb_cam" type="usb_cam_node" output="screen" >
     <param name="video_device" value="/dev/video0" />
-    <param name="image_width" value="640 " />
+    <param name="image_width" value="854" />
     <param name="image_height" value="480" />
     <param name="pixel_format" value="yuyv" />
     <param name="io_method" value="mmap"/>
@@ -13,7 +13,7 @@
   
   <node name="usb_cam2" pkg="usb_cam" type="usb_cam_node" output="screen" >
     <param name="video_device" value="/dev/video2" />
-    <param name="image_width" value="640 " />
+    <param name="image_width" value="854" />
     <param name="image_height" value="480" />
     <param name="pixel_format" value="yuyv" />
     <param name="io_method" value="mmap"/>
@@ -25,7 +25,7 @@
     <param name = "publish" value = "joined_image"/>
     <param name = "queue_size" value = "10"/>
     <param name = "verbose" value = "True"/>
-    <param name = "encoding" value = "bgr8"/>
+    <param name = "encoding" value = "mono8"/>
     <param name = "join_type" value = "2"/>
     <param name = "ratio" value = "0.85"/>
     <param name = "min_match" value = "10"/>
