@@ -181,19 +181,19 @@ class ImageJoinCuda(ImageJoin):
             except:
                 raise Exception("Couldn't match images.")
             start = time.time()
-            result=cv.cuda.add(panorama1,panorama2) #evtl durch primitive ersetzen (a+b)
+            final_result=cv.cuda.add(panorama1,panorama2) #evtl durch primitive ersetzen (a+b)
             end = time.time()
             self.logger.info(f"Time to add images on GPU: {end-start}")
             expected_time += end-start
             log_time = time.time()
             self.logger.info(f"Time to log and print: {log_time-end}")
-            rows, cols = np.where(result[:, :] != 0)
-            min_row, max_row = np.min(rows), np.max(rows) + 1
-            min_col, max_col = np.min(cols), np.max(cols) + 1
-            final_result = result[min_row:max_row, min_col:max_col]
-            a = time.time()
-            self.logger.info(f"Time for NP stuff: {a-end}")
-            expected_time += end-a
+            #rows, cols = np.where(result[:, :] != 0)
+            #min_row, max_row = np.min(rows), np.max(rows) + 1
+            #min_col, max_col = np.min(cols), np.max(cols) + 1
+            #final_result = result[min_row:max_row, min_col:max_col]
+            #a = time.time()
+            #self.logger.info(f"Time for NP stuff: {a-end}")
+            #expected_time += end-a
 
         else :
             pano = time.time()
@@ -223,19 +223,19 @@ class ImageJoinCuda(ImageJoin):
             expected_time += convertUMat-convertGPU
             expected_time += warponGPU-convertUMat
             start = time.time()
-            result= panorama1+panorama2
+            final_result=cv.cuda.add(panorama1,panorama2)
             end_some = time.time()
             self.logger.info(f"Time to add images on GPU: {end_some-start}")
             expected_time += end_some-start
             log_time = time.time()
             self.logger.info(f"Time to log and print: {log_time-end_some}")
-            rows, cols = np.where(result[:, :, 0] != 0)
-            min_row, max_row = np.min(rows), np.max(rows) + 1
-            min_col, max_col = np.min(cols), np.max(cols) + 1
-            final_result = result[min_row:max_row, min_col:max_col, :]
-            a = time.time()
-            self.logger.info(f"Time for NP stuff: {a-end_some}")
-            expected_time += a-end_some
+            #rows, cols = np.where(result[:, :, 0] != 0)
+            #min_row, max_row = np.min(rows), np.max(rows) + 1
+            #min_col, max_col = np.min(cols), np.max(cols) + 1
+            #final_result = result[min_row:max_row, min_col:max_col, :]
+            #a = time.time()
+            #self.logger.info(f"Time for NP stuff: {a-end_some}")
+            #expected_time += a-end_some
         total_end  = time.time()
         self.logger.info(f"Total time to join: {total_end-total_start}, expectet time: {expected_time}")
         return cv.convertScaleAbs(final_result)

@@ -136,12 +136,12 @@ class ImageJoinFeature(ImageJoin):
                 panorama2 = cv.warpPerspective(img2, H, (width_panorama, height_panorama))*mask2
             except:
                 raise Exception("Couldn't match images.")
-            result=panorama1+panorama2
+            final_result=panorama1+panorama2
 
-            rows, cols = np.where(result[:, :] != 0)
-            min_row, max_row = np.min(rows), np.max(rows) + 1
-            min_col, max_col = np.min(cols), np.max(cols) + 1
-            final_result = result[min_row:max_row, min_col:max_col]
+            #rows, cols = np.where(result[:, :] != 0)
+            #min_row, max_row = np.min(rows), np.max(rows) + 1
+            #min_col, max_col = np.min(cols), np.max(cols) + 1
+            #final_result = result[min_row:max_row, min_col:max_col]
 
         else :
             panorama1 = np.zeros((height_panorama, width_panorama, depth))
@@ -150,10 +150,10 @@ class ImageJoinFeature(ImageJoin):
             panorama1 *= mask1
             mask2 = self.create_mask(img1,img2,version='right_image')
             panorama2 = cv.warpPerspective(img2, H, (width_panorama, height_panorama))*mask2
-            result=panorama1+panorama2
+            final_result=panorama1+panorama2
 
-            rows, cols = np.where(result[:, :, 0] != 0)
-            min_row, max_row = np.min(rows), np.max(rows) + 1
-            min_col, max_col = np.min(cols), np.max(cols) + 1
-            final_result = result[min_row:max_row, min_col:max_col, :]
+            #rows, cols = np.where(result[:, :, 0] != 0)
+            #min_row, max_row = np.min(rows), np.max(rows) + 1
+            #min_col, max_col = np.min(cols), np.max(cols) + 1
+            #final_result = result[min_row:max_row, min_col:max_col, :]
         return cv.convertScaleAbs(final_result)
