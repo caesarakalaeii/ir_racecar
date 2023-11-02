@@ -51,7 +51,7 @@ if __name__ == "__main__":
             frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY) #uncomment for b/w images
             frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
             if a == False or b == False:
-                print(f"Couldnt open Cameras, a:{a} b:{b}")
+                print("Couldnt open Cameras, a:%b b:%b"%a%b)
                 continue
             
             if show_windows:

@@ -56,14 +56,14 @@ class ImageJoinFeature(ImageJoin):
         a = time()
         kp1, des1 = self.finder.detectAndCompute(img1, None)
         b = time()
-        print(f'Time for one kp finding and description: {b-a}')
+        print('Time for one kp finding and description: %f'%(b-a))
         kp2, des2 = self.finder.detectAndCompute(img2, None)
         b = time()
-        print(f'Time for complete kp finding and description: {b-a}')
+        print('Time for complete kp finding and description: %f'%(b-a))
         a = time()
         raw_matches = self.matcher.knnMatch(des1, des2, k=2)
         b = time()
-        print(f'Time for knn Match: {b-a}')
+        print('Time for knn Match: %f'%(b-a))
         good_points = []
         good_matches=[]
         a = time()
@@ -72,7 +72,7 @@ class ImageJoinFeature(ImageJoin):
                 good_points.append((m1.trainIdx, m1.queryIdx))
                 good_matches.append([m1])
         b = time()
-        print(f'Time for computing good matches: {b-a}')
+        print('Time for computing good matches: %f'%(b-a))
         if self.matching_write:
             img3 = cv.drawMatchesKnn(img1, kp1, img2, kp2, good_matches, None, flags=2)
             cv.imwrite('matching.jpg', img3)
@@ -84,7 +84,7 @@ class ImageJoinFeature(ImageJoin):
             a = time()
             H, status = cv.findHomography(image2_kp, image1_kp, cv.RANSAC,5.0)
             b = time()
-            print(f'Time for computing homography: {b-a}')
+            print('Time for computing homography: %f'%(b-a))
             self.matrix_set = True
             if(self.static_matrix):
                 self.H = H
@@ -141,7 +141,7 @@ class ImageJoinFeature(ImageJoin):
             panorama1[0:img1.shape[0], 0:img1.shape[1]] = img1
             panorama1 *= mask1
             b = time()
-            print(f'Time for computing mask: {b-a}')
+            print('Time for computing mask: %f'%(b-a))
             if self.static_mask and self.mask_set:
                 mask2 = self.mask2
             else:
@@ -152,7 +152,7 @@ class ImageJoinFeature(ImageJoin):
                 a = time()
                 panorama2 = cv.warpPerspective(img2, H, (width_panorama, height_panorama))*mask2
                 b = time()
-                print(f'Time for warping images: {b-a}')
+                print('Time for warping images: %f'%(b-a))
             except:
                 raise Exception("Couldn't match images.")
             final_result=panorama1+panorama2
@@ -171,11 +171,11 @@ class ImageJoinFeature(ImageJoin):
             
             mask2 = self.create_mask(img1,img2,version='right_image')
             b = time()
-            print(f'Time for masking images: {b-a}')
+            print('Time for masking images: %f'%(b-a))
             a = time()
             panorama2 = cv.warpPerspective(img2, H, (width_panorama, height_panorama))*mask2
             b = time()
-            print(f'Time for warping images: {b-a}')
+            print('Time for warping images: %f'%(b-a))
             final_result=panorama1+panorama2
 
             #rows, cols = np.where(result[:, :, 0] != 0)
