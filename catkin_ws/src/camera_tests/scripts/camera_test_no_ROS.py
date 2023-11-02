@@ -18,7 +18,7 @@ if __name__ == "__main__":
     runtime_list.update({"verbose":True})
     runtime_list.update({"direct_import": False})
     runtime_list.update({"static_matrix": False})
-    runtime_list.update({"timing":False})
+    runtime_list.update({"timing":True})
     runtime_list.update({"console_log":True})
     runtime_list.update({"finder": cv2.ORB_create(nfeatures=50)})
     runtime_list.update({"matcher": cv2.BFMatcher(cv2.NORM_HAMMING)})
