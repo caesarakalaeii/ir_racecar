@@ -1,5 +1,7 @@
 cd mmoersener/ir_racecar/catkin_ws/
+source /opt/ros/noetic/setup.bash
+export ROS_IP=10.128.41.68
+export ROS_MASTER_URI=http://10.128.41.68:11311
 catkin_make
-source devel/setup.bash
 cd src/camera_tests/scripts/
-roslaunch camera_processor.launch 
+roslaunch camera_processor.launch

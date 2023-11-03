@@ -34,7 +34,7 @@
     <param name = "static_matrix" value = "True"/>
     <param name = "static_mask" value = "True"/>
     <param name = "direct_import" value = "False"/>
-    <param name = "timing" value = "False"/>
+    <param name = "timing" value = "True"/>
   </node>
 
   <node pkg="image_proc" type="image_proc" name="image_proc1" ns="usb_cam1" >

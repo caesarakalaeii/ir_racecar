@@ -20,7 +20,7 @@ if __name__ == "__main__":
     runtime_list.update({"static_matrix": False})
     runtime_list.update({"timing":True})
     runtime_list.update({"console_log":True})
-    runtime_list.update({"finder": cv2.ORB_create(nfeatures=50)})
+    runtime_list.update({"finder": cv2.ORB_create(nfeatures=1000)})
     runtime_list.update({"matcher": cv2.BFMatcher(cv2.NORM_HAMMING)})
     show_windows = True
     for k,v in default_list.items():
