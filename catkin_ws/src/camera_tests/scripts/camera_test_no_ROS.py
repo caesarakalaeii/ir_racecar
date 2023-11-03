@@ -59,11 +59,12 @@ if __name__ == "__main__":
                 cv2.imshow("Cam2", frame2)
             if tries >100:
                 try:
+                    start = time.time()
                     joined = joiner.blending(frame1, frame2)
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     # time when we finish processing for this frame
                     new_frame_time = time.time()
-
+                    print(f'Total time to blend: {new_frame_time-start}')
                     # Calculating the fps
 
                     # fps will be number of frame processed in given time frame
