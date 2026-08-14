@@ -19,8 +19,12 @@
 
   outputs =
     # `...` rather than a closed { self, nixpkgs }: adding a second input later
-    # would otherwise fail with "called with unexpected argument 'self'".
-    { nixpkgs, ... }:
+    # would otherwise fail with "called with unexpected argument '<input>'".
+    #
+    # `self` is taken, not ignored, and it is load-bearing: it is the only handle
+    # on this repo's own files that exists at runtime when a verb is invoked as
+    # `nix run /path/to/repo#lint` from some other directory. See rootPreamble.
+    { self, nixpkgs, ... }:
     let
       lib = nixpkgs.lib;
 
@@ -145,6 +149,19 @@
         # tree, and a dirty tree makes every nix call print "Git tree is dirty".
         PYTHONDONTWRITEBYTECODE = "1";
         PIP_DISABLE_PIP_VERSION_CHECK = "1";
+
+        # Part of the anchoring invariant (see rootPreamble), not a performance
+        # knob. ruff puts its cache in a `.ruff_cache` next to the *process's
+        # cwd*, not next to the files it was handed, so `nix run
+        # /path/to/repo#lint` from somebody else's directory littered a cache
+        # directory there -- a write outside this repo, which is exactly what the
+        # anchoring fix is meant to make impossible. It also makes ruff usable at
+        # all when the repo root is this flake's read-only copy in the store: with
+        # a cache it dies with "Failed to initialize cache ... Read-only file
+        # system" before reporting a single finding. Note the value: ruff parses
+        # this as a bool and rejects "1" with "invalid value '1' for --no-cache".
+        # 30 files reparse in well under a second, so there is nothing to miss.
+        RUFF_NO_CACHE = "true";
       };
 
       # ======================================================================
@@ -166,8 +183,15 @@
       #          commented out. A `test` verb here would be a lie.
       #
       # `text` is bash under `set -euo pipefail`, shellcheck'd at BUILD time, and
-      # it runs in the caller's current directory so an agent can test
-      # uncommitted edits.
+      # every verb is ANCHORED: by the time `text` runs, the process cwd IS
+      # $REPO_ROOT (see rootPreamble and anchorPreamble), so a tool's own "no path
+      # given, use the current directory" default already means "this repo". That
+      # is why a bare "$@" below is correct rather than the bug it used to be.
+      # Relative paths the caller passed have been made absolute before the cd,
+      # so `dev-lint ./one_file.py` still means the file they typed.
+      #
+      # Set `mutates = true` on any verb that WRITES; that is what gets it the
+      # mutableGuard below.
       commands = pkgs: {
         lint = {
           # Heads up for the next agent: this repo does NOT currently pass. The
@@ -176,10 +200,25 @@
           # imports throughout. That non-zero exit is the honest state of the
           # tree, not a broken flake -- do not chase it by weakening the verb.
           description = "ruff check (fails today -- pre-existing issues, see flake comment)";
+          # This exact text used to be a gate that lied. `ruff check` with no path
+          # argument lints the process's cwd, and the cwd was the caller's: from an
+          # unrelated directory `nix run /path/to/repo#lint` printed "All checks
+          # passed!" and exited 0 on a tree with 137 findings, while the same flake
+          # from inside the repo exited 1. The flake-URL form is what CI and a cold
+          # agent use, so the green one was the one being believed. The text is
+          # unchanged and now correct, because anchorPreamble moved the cwd first.
+          # Do not "improve" it into `ruff check .`: that is not wrong today, but
+          # it hides where the anchoring comes from and reads as if this verb were
+          # cwd-relative again.
           text = ''ruff check "$@"'';
         };
         fmt = {
           description = "ruff format (rewrites files)";
+          # Same anchoring, and here it was the dangerous half rather than the
+          # embarrassing one: `ruff format` is mutating, so run from elsewhere this
+          # rewrote the caller's files. Reproduced on a scratch directory before
+          # the fix, and it is now the thing checks.anchoring pins down.
+          mutates = true;
           text = ''ruff format "$@"'';
         };
         run = {
@@ -190,8 +229,15 @@
           # numpy, so the prepend is doing the right thing. There is no .venv.
           #
           # Absolute script path, not a relative one, so this behaves the same
-          # from any subdirectory. Python puts the script's own directory on
-          # sys.path[0], which is what makes its `import image_join` resolve.
+          # from any directory -- which only became true once $REPO_ROOT stopped
+          # meaning "the caller's cwd" (see rootPreamble); before that, this verb
+          # died with "can't open file '<caller's cwd>/catkin_ws/...'". Python
+          # puts the script's own directory on sys.path[0], which is what makes
+          # its `import image_join` resolve.
+          #
+          # No `mutates` flag: the script writes nothing (no imwrite, no open())
+          # and PYTHONDONTWRITEBYTECODE keeps CPython from dropping .pyc files
+          # next to it, so it is read-only with respect to the tree.
           #
           # Verified reaching the repo's own code and then failing on the repo's
           # own bug: camera_test_no_ROS.py calls
@@ -209,6 +255,12 @@
       # ======================================================================
       # GENERIC MACHINERY -- byte-identical in all 41 repos, do not edit
       # ======================================================================
+      # The anchoring below (sourceEntries / rootPreamble / anchorPreamble /
+      # mutableGuard) belongs to that shared machinery and carries no knowledge of
+      # this repo, so it stays copyable verbatim. It replaces a cwd-relative
+      # version that was wrong in every copy, not just this one -- so if you find
+      # a sibling repo still running the old two-line rootPreamble, it has the bug
+      # described there and this is the patch for it.
 
       # Prepend, never assign: a host LD_LIBRARY_PATH may be carrying something
       # the user needs, and clobbering it breaks binaries they launch from here.
@@ -220,13 +272,115 @@
           export LD_LIBRARY_PATH="${lib.makeLibraryPath (nativeLibs pkgs)}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
         '';
 
-      # Every command gets $REPO_ROOT. `nix run` and `nix develop` both start in
-      # whatever directory they were invoked from, so a bare relative path
-      # silently resolves against wherever the agent happened to be standing.
-      # Note we do NOT cd there: commands act on the caller's cwd on purpose.
+      # Every command gets $REPO_ROOT, and every verb in the map above is aimed at
+      # it. This is the anchoring invariant -- a verb behaves the same from any
+      # cwd and touches nothing outside this repo -- and it is worth spelling out
+      # at length, because the obvious implementation, which is what this file
+      # shipped with, is wrong:
+      #
+      #   REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+      #
+      # `nix run` and `nix develop` both start in whatever directory the caller
+      # was standing in, and nix does NOT tell the wrapper which path the flake
+      # was loaded from -- it only gives it a read-only copy of the source in the
+      # store. So invoke a verb as `nix run /path/to/repo#lint` from an unrelated
+      # directory, which is precisely what CI and a cold agent do, and BOTH
+      # branches above answer with the CALLER's directory. Measured, not
+      # hypothetical: lint printed "All checks passed!" and exited 0 on a tree
+      # with 137 real findings, `dev-fmt` reformatted files in the caller's
+      # directory, and `dev-run` looked for catkin_ws under it.
+      #
+      # Two candidates, in order:
+      #   1. the git work tree we are standing in -- but only if it really is a
+      #      checkout of THIS repo, which is what the sourceEntries loop settles.
+      #      This is the branch that matters locally: it is what lets `dev-fmt`
+      #      rewrite the files an agent is editing, uncommitted ones included.
+      #   2. `self`, this flake's own source in the store. Correct from anywhere
+      #      on the filesystem, and read-only, so a writing verb refuses (see
+      #      mutableGuard) rather than guessing at a target.
+      # Only `git` is used, no coreutils, so this survives a stripped PATH.
+      #
+      # The cost of baking `self` in, stated so the next agent is not surprised:
+      # the wrappers now reference the source, so editing any tracked file makes
+      # the next `nix develop` rebuild four ~1 kB shell scripts. That is the
+      # price of a verb that cannot be aimed at the wrong tree.
+      sourceEntries = lib.attrNames (builtins.readDir self.outPath);
+
       rootPreamble = ''
-        REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+        REPO_ROOT="${self}"
+        if _candidate="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+          # Every top-level name of the flake source must be present before we
+          # trust a work tree. Some other repo, or a bare directory that happens
+          # to sit inside one, fails on the first missing entry and we fall back
+          # to the store copy -- which is the whole point, because that is the
+          # case where writing would land outside this repo.
+          for _entry in ${lib.escapeShellArgs sourceEntries}; do
+            if [ ! -e "$_candidate/$_entry" ]; then
+              _candidate=""
+              break
+            fi
+          done
+          if [ -n "$_candidate" ]; then
+            REPO_ROOT="$_candidate"
+          fi
+        fi
+        unset _candidate _entry
         export REPO_ROOT
+      '';
+
+      # The second half of the anchoring invariant, and it goes in the WRAPPERS
+      # ONLY -- never in the shellHook, where a `cd` would drag an interactive
+      # `nix develop` out of the subdirectory the user was working in.
+      #
+      # Why move the cwd at all, when every verb could just be handed
+      # "''${@:-$REPO_ROOT}" instead? Because "the path the tool was handed" is not
+      # the only way a tool reaches the filesystem, and the leftovers prove it:
+      # with an explicit path argument and the cwd left alone, `ruff check` still
+      # dropped a `.ruff_cache` directory into the caller's cwd on every run
+      # (measured on a scratch directory -- see RUFF_NO_CACHE above, which closes
+      # that one). Argument defaulting also silently stops working the moment an
+      # invocation is flags-only: "''${@:-$REPO_ROOT}" expands to just `--fix` for
+      # `dev-lint --fix`, and ruff then falls back to... the cwd, mutating it.
+      # Moving the cwd fixes the whole class instead of one member of it, and it
+      # makes every tool's own "no path given" default correct by construction.
+      #
+      # The caller's relative paths are made absolute first, so nothing they typed
+      # changes meaning. A flag, an absolute path, or a word that is not an
+      # existing path (a rule code like E722, a flag's value) is forwarded
+      # untouched -- guessing at those is how you break `--select`.
+      anchorPreamble = ''
+        _args=()
+        for _arg in "$@"; do
+          case $_arg in
+            -* | /*) _args+=("$_arg") ;;
+            *)
+              if [ -e "$_arg" ]; then
+                _args+=("$PWD/$_arg")
+              else
+                _args+=("$_arg")
+              fi
+              ;;
+          esac
+        done
+        set -- "''${_args[@]}"
+        unset _args _arg
+        cd "$REPO_ROOT"
+      '';
+
+      # Emitted only for verbs marked `mutates`. Candidate 2 above is the store
+      # copy, which is read-only, and without this `ruff format` walks the whole
+      # tree emitting one "Read-only file system (os error 30)" per file before
+      # exiting 2 -- forty lines to convey one fact. Say the fact once, and say
+      # what to do about it. Refusing is the honest answer here: nix has not told
+      # us where a writable checkout lives, so there is nothing to fall back to.
+      mutableGuard = name: ''
+        if [ ! -w "$REPO_ROOT" ]; then
+          echo "dev-${name} rewrites files, so it needs a checkout it can write to." >&2
+          echo "The repo root resolved to this flake's read-only source in the store:" >&2
+          echo "  $REPO_ROOT" >&2
+          echo "cd into a checkout of this repo and run it there." >&2
+          exit 1
+        fi
       '';
 
       # One derivation per command, reused by both `apps` and the dev shell, so
@@ -242,8 +396,12 @@
             runtimeInputs = toolchain pkgs;
             runtimeEnv = envVars pkgs;
             meta.description = cmd.description;
+            # Order matters: resolve the root, refuse early if a writing verb has
+            # nowhere writable to aim, then move into the root, then run.
             text = ''
               ${rootPreamble}
+              ${lib.optionalString (cmd.mutates or false) (mutableGuard name)}
+              ${anchorPreamble}
               ${ldPreamble pkgs}
               ${cmd.text}
             '';
@@ -335,8 +493,10 @@
       # every wrapper, which runs shellcheck over every command text. It also
       # imports the modules this repo actually needs, which is the cheap real
       # check available in a repo with no test suite: it would catch a nixpkgs
-      # bump that drops cv2's python bindings or moves tkinter. NEVER add a check
-      # that always passes: an agent reads "all checks passed!" as a signal.
+      # bump that drops cv2's python bindings or moves tkinter. The second check
+      # pins down the anchoring invariant, which is the one property of this file
+      # that broke in practice. NEVER add a check that always passes: an agent
+      # reads "all checks passed!" as a signal.
       checks = forAllSystems (pkgs: {
         toolchain =
           pkgs.runCommand "toolchain-check"
@@ -354,6 +514,67 @@
               # display in a build sandbox, so `tkinter.Tk()` would fail here for
               # a reason that has nothing to do with the toolchain.
               python3 -c 'import cv2, numpy, scipy, serial, tkinter, yaml; print(cv2.__version__)'
+              touch "$out"
+            '';
+
+        # The anchoring regression test, and the reason it is a check rather than
+        # a comment: the bug it covers is invisible from inside the repo, because
+        # there the caller's cwd happens to BE the repo root. A build sandbox is
+        # not a git work tree and has a decoy directory as its cwd, so in here the
+        # wrappers resolve $REPO_ROOT exactly the way a cold
+        # `nix run /path/to/repo#fmt` from somebody else's directory does.
+        #
+        # The lint assertions are phrased as negatives on purpose, so they keep
+        # their meaning if this repo ever reaches zero findings: a correctly
+        # anchored `ruff check` prints neither a decoy path nor the "No Python
+        # files found" warning, whereas the broken version printed one or the other
+        # depending on whether the caller's directory happened to contain python.
+        anchoring =
+          pkgs.runCommand "anchoring-check"
+            {
+              nativeBuildInputs = lib.attrValues (wrappers pkgs);
+            }
+            ''
+              # Logs stay OUTSIDE the decoy directory, because the last assertion
+              # is that the decoy directory is still exactly as we left it.
+              mkdir decoy
+              printf 'import os,sys\nx=1\n' > decoy/decoy.py
+              cp decoy/decoy.py expected.py
+
+              cd decoy
+              # A mutating verb with no writable checkout must refuse, not
+              # reformat whatever it happens to be standing in.
+              if dev-fmt > ../fmt.log 2>&1; then
+                echo "dev-fmt exited 0 outside a work tree; it must refuse" >&2
+                exit 1
+              fi
+              # `|| true` because the repo has pre-existing findings, so a
+              # correctly anchored dev-lint exits non-zero in here.
+              dev-lint > ../lint.log 2>&1 || true
+              cd ..
+
+              if ! cmp -s decoy/decoy.py expected.py; then
+                echo "a verb rewrote a file outside the repo" >&2
+                cat fmt.log >&2
+                exit 1
+              fi
+              # Not just "unmodified" -- untouched. This is the assertion that
+              # catches a stray cache or lockfile, which is how ruff's .ruff_cache
+              # was found landing in the caller's directory even after the paths
+              # handed to it were correct.
+              if [ "$(ls -A decoy)" != "decoy.py" ]; then
+                echo "a verb created files in the caller's directory:" >&2
+                ls -A decoy >&2
+                exit 1
+              fi
+              if grep -q 'decoy\.py' lint.log; then
+                echo "dev-lint inspected the caller's directory" >&2
+                exit 1
+              fi
+              if grep -qi 'no python files found' lint.log; then
+                echo "dev-lint inspected an empty cwd instead of the repo" >&2
+                exit 1
+              fi
               touch "$out"
             '';
       });
