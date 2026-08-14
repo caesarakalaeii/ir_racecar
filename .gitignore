@@ -8,3 +8,12 @@ catkin_ws/src/camera_tests/scripts/__pycache__*
 .vscode*
 catkin_ws/src/usb_cam*
 build*
+# nix
+result
+result-*
+.direnv/
+
+# python
+.venv/
+__pycache__/
+*.pyc
