@@ -1,97 +1,89 @@
 {
   # Keep this line accurate and one line long: `nix flake metadata` prints it,
   # and it is the first thing a cold agent learns about the repo.
-  description = "ir_racecar -- OpenCV image-join / IR lane-detection experiments for an MIT-RACEcar-style robot (archived ROS1 catkin workspace). Run `nix flake show` for the command map.";
+  description = "ir_racecar -- OpenCV image-join / IR lane-detection experiments for an MIT-RACEcar-style robot, in a deprecated ROS 1 catkin workspace. Run `nix flake show` for the command map.";
 
-  # nixpkgs is the only input, on purpose.
-  #
-  # flake-utils would buy exactly one thing here -- eachDefaultSystem -- which is
-  # the three-line genAttrs below. In exchange it costs a second lock node in
-  # every repo (flake-utils transitively pulls `systems`), a second upstream that
-  # can break, and a hardcoded system list this repo cannot edit. That list is
-  # currently broken: it still contains x86_64-darwin, which now throws (see
-  # `systems` below).
-  #
-  # nixos-unstable is the same channel the author's own NixOS config tracks, so
-  # `nix develop` here and `nixos-rebuild` there resolve the same store paths and
-  # share one cache.
+  # nixpkgs is the only input, and nothing here wants a second one: the canonical
+  # block below already defines `systems` and `forAllSystems`, so the system list
+  # lives in this file rather than in another input's copy of it.
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs =
-    # `...` rather than a closed { self, nixpkgs }: adding a second input later
-    # would otherwise fail with "called with unexpected argument '<input>'".
-    #
-    # `self` is taken, not ignored, and it is load-bearing: it is the only handle
-    # on this repo's own files that exists at runtime when a verb is invoked as
-    # `nix run /path/to/repo#lint` from some other directory. See rootPreamble.
+    # `...` rather than a closed pattern, so a second input can be added later
+    # without editing this line. `self` is mandatory: the canonical block anchors
+    # every verb on it.
     { self, nixpkgs, ... }:
     let
       lib = nixpkgs.lib;
 
-      # x86_64-darwin is deliberately absent. nixpkgs 26.11 replaced that whole
-      # attribute set with `throw "Nixpkgs 26.11 has dropped support for
-      # x86_64-darwin"`. genAttrs is lazy, so plain `nix develop` on Linux would
-      # not notice -- it detonates later, on `nix flake check --all-systems`.
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-        "aarch64-darwin"
-      ];
-
-      # Stand-in for flake-utils.lib.eachDefaultSystem. Passes `pkgs` rather than
-      # a system string, because that is what every call site below wants.
-      forAllSystems = f: lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
+      # ======================================================================
+      # PER-REPO BLOCK 5 -- the name in the interactive dev-shell banner
+      # ======================================================================
+      repoName = "ir_racecar";
 
       # ======================================================================
       # PER-REPO BLOCK 1 -- the toolchain
       # ======================================================================
-      # This repo ships no manifest at all -- no requirements.txt, no setup.py,
-      # no CI. The dependency set below was derived by grepping the imports of
-      # every .py under catkin_ws/src/camera_tests/scripts: cv2, numpy, scipy,
-      # serial, yaml, tkinter (plus rospy/cv_bridge/sensor_msgs -- see the ROS
-      # note further down).
+      # This repo ships no Python manifest: `git ls-files` matches no
+      # requirements.txt, setup.py, pyproject.toml, Pipfile or .github/ workflow.
+      # The dependency set below was derived by grepping the imports of the 22
+      # tracked .py files (`git ls-files '*.py' | wc -l` -> 22). The third-party
+      # names they import are cv2, numpy, scipy, serial, yaml and tkinter, plus
+      # rospy / roslib / cv_bridge / sensor_msgs -- see GAP 1.
       #
-      # Because every one of those exists in nixpkgs, the interpreter is built
-      # with withPackages instead of bootstrapping a .venv. Consequence, and it
-      # is the whole point: this shell needs no network and there is no `setup`
-      # verb to forget to run. Do NOT "improve" this by adding uv and a
+      # Every one of the first six exists in nixpkgs, so the interpreter is built
+      # with withPackages instead of bootstrapping a .venv. Consequence, and it is
+      # the whole point: this shell needs no network and there is no `setup` verb
+      # to forget to run. Do NOT "improve" this by adding uv and a
       # requirements.txt -- there is no upstream pin to be faithful to, so a
       # generated requirements.txt would be a new source of truth nobody wrote.
       #
-      # Pinned python313, not python3: the scripts were written for the 3.8 that
-      # ROS Noetic shipped (the committed .pyc files are cpython-38), and a
-      # rolling alias walking on to 3.14 would move this shell under the next
-      # agent for no reason.
+      # python313 is pinned rather than python3 because in the locked nixpkgs
+      # `python3` already resolves to 3.14.7 while `python313` is 3.13.15, and the
+      # bytecode committed under scripts/__pycache__ is cpython-38. Pinning the
+      # major keeps the shell from moving under the next agent.
       #
-      # GAP 1 -- ROS. camera_join.py, publish_camera_info.py and the
-      # to_be_deleted/image_stitching_ROS* scripts import rospy, roslib,
-      # cv_bridge and sensor_msgs, and catkin_ws/src/camera_tests/CMakeLists.txt
-      # is a catkin package. ROS 1 Noetic is EOL and is NOT packaged in nixpkgs;
-      # it lives in the out-of-tree nix-ros-overlay, which would be a second
-      # input for a workspace that cannot be built anyway. So `catkin_make` and
-      # the roslaunch flow in scripts/ros_start.batch are explicitly NOT covered
-      # here, and there is no `build` verb pretending otherwise. Everything the
-      # non-ROS scripts need IS covered.
+      # GAP 1 -- ROS is not covered, and no verb pretends otherwise. Eight tracked
+      # scripts import rospy, roslib, cv_bridge or sensor_msgs: scripts/
+      # camera_join.py, scripts/publish_camera_info.py, and under
+      # scripts/to_be_deleted/ the files camera_join_subscribe.py,
+      # image_stitching_ROS.py, image_stitching_ROS_concat.py,
+      # image_stitching_ROS_openCV.py, image_stitching_ROS_staticMatrix.py and
+      # writing_image_test.py. catkin_ws/src/camera_tests is a catkin package
+      # (CMakeLists.txt + package.xml) and scripts/ros_start.batch runs
+      # `catkin_make`, then `source devel/setup.bash`, then `roslaunch
+      # camera_processor.launch`. None of that is reachable from here: the locked
+      # nixpkgs has no `rospy` attribute at all (`nix eval nixpkgs#rospy` and
+      # `nix eval nixpkgs#python313Packages.rospy` both fail with "does not
+      # provide attribute"), so nothing in this shell can import those modules.
       #
-      # GAP 2 -- OpenCV highgui. nixpkgs builds opencv4 with `enableGtk3 ? false`,
-      # so cv2.imshow / namedWindow / waitKey raise "The function is not
-      # implemented. Rebuild the library with ... GTK+ 2.x support". That hits the
-      # windowed demos (camera_test_no_ROS.py, showCamNoGUI.py, showFPS.py). The
-      # fix is `pkgs.python313Packages.opencv4.override { enableGtk3 = true; }`,
-      # which no binary cache has and which therefore costs a full ~30 min source
-      # build of OpenCV for every cold agent. Left off on purpose: the same
-      # scripts also need two physical USB cameras on /dev/video0 and /dev/video2
-      # and an X/Wayland display, so a headless agent gains nothing from the
-      # rebuild. Turn it on locally if you actually have the hardware in front of
-      # you.
+      # GAP 2 -- OpenCV highgui is absent. Measured in this shell, with cv2
+      # 4.13.0, `cv2.namedWindow("t")` raises:
+      #   error: (-2:Unspecified error) The function is not implemented. Rebuild
+      #   the library with Windows, GTK+ 2.x or Cocoa support.
+      # That hits the 8 of 22 scripts that call imshow/namedWindow/waitKey:
+      # camera_test_no_ROS.py, showCamNoGUI.py, showFPS.py, and under
+      # to_be_deleted/ image_stitching_feature.py, image_stitching_test.py,
+      # image_test.py, showCam.py and writing_image_test.py.
       #
-      # Not covered and not coverable: scripts/pwm_Gen*.ino (Arduino sketches for
-      # the external IR PWM generator) and cad/*.kicad_* -- those need the Arduino
-      # IDE and KiCad plus real hardware, not a dev shell.
+      # `pkgs.python313Packages.opencv4.override { enableGtk3 = true; }` does
+      # evaluate, to a different derivation than the default opencv4, and
+      # cache.nixos.org does not have that output -- `nix path-info --store
+      # https://cache.nixos.org <outPath>` answers "is not valid" for the override
+      # and succeeds for the default -- so switching it on means building OpenCV
+      # from source locally. Left off on purpose: the affected scripts also need
+      # real cameras (camera_test_no_ROS.py opens VideoCapture(0) and
+      # VideoCapture(2)) and a display, so a headless agent gains nothing from the
+      # rebuild. Turn it on locally if you have the hardware in front of you.
       #
-      # Explicit `pkgs.foo`, never `with pkgs; [ ... ]`: when an attr disappears
-      # in a nixpkgs bump, `with` reports a bare undefined identifier with no hint
-      # of which set it came from, and the name is not greppable.
+      # Not covered and not coverable: scripts/pwm_Gen.ino and
+      # scripts/pwm_Gen_frame_sync.ino (Arduino sketches for the external IR PWM
+      # generator) and the four cad/*.kicad_* files -- those need the Arduino IDE
+      # and KiCad plus real hardware, not a dev shell.
+      #
+      # Explicit `pkgs.foo`, never `with pkgs; [ ... ]`: when an attr disappears in
+      # a nixpkgs bump, `with` reports a bare undefined identifier with no hint of
+      # which set it came from, and the name is not greppable.
       toolchain = pkgs: [
         # ---- this repo's ecosystem ----
         (pkgs.python313.withPackages (ps: [
@@ -101,13 +93,17 @@
           ps.pyyaml
           ps.scipy
           # tkinter is a separate derivation in nixpkgs, not part of the base
-          # interpreter. showCamNoGUI.py and toSerialApp.py do `from tkinter
-          # import *`, so importing the interpreter alone would fail there.
+          # interpreter. Three scripts need it: showCamNoGUI.py and
+          # to_be_deleted/showCam.py do `from tkinter import *` (showCam.py also
+          # `from tkinter import ttk`), toSerialApp.py does `import tkinter as
+          # tk`. Without this the interpreter alone would fail there.
           ps.tkinter
         ]))
         pkgs.ruff
 
-        # ---- present in every repo in the fleet ----
+        # ---- generic helpers, on PATH for whoever is working in here ----
+        # No verb below invokes any of these; they are here so the shell is a
+        # usable place to stand.
         pkgs.git
         pkgs.jq
         pkgs.gnumake
@@ -116,18 +112,15 @@
       # ======================================================================
       # PER-REPO BLOCK 2 -- libraries that get dlopened, not linked
       # ======================================================================
-      # Nothing in the toolchain above needs this: nixpkgs' cv2, numpy and scipy
-      # are linked against the store copies already. It is here for the next
-      # agent, because a repo with no manifest is exactly the one where somebody
-      # reaches for `python -m venv .venv && .venv/bin/pip install <wheel>` --
-      # and a manylinux wheel dlopens a libstdc++ that NixOS has no /usr/lib to
-      # find it in. Keep the list at these two; LD_LIBRARY_PATH is a blunt
-      # instrument.
+      # Nothing in the toolchain above needs this. Measured: inside the dev shell,
+      # `unset LD_LIBRARY_PATH; python3 -c 'import cv2, numpy, scipy, serial,
+      # yaml, tkinter'` succeeds -- nixpkgs has already linked those extension
+      # modules against their store copies.
       #
-      # This fixes shared libraries only. A prebuilt *executable* out of a wheel
-      # still needs a real ELF interpreter at the FHS path
-      # `/lib64/ld-linux-x86-64.so.2`. That is a host setting (`environment.ldso`
-      # / `programs.nix-ld.enable`) and no project flake can supply it.
+      # The list is kept anyway as the escape hatch for a binary that dlopens
+      # libstdc++ or libz at runtime and was not built by nixpkgs. That is a
+      # choice, not a measurement; keep it at these two, because LD_LIBRARY_PATH
+      # is a blunt instrument.
       nativeLibs = pkgs: [
         pkgs.stdenv.cc.cc.lib
         pkgs.zlib
@@ -136,257 +129,371 @@
       # ======================================================================
       # PER-REPO BLOCK 3 -- constant environment variables
       # ======================================================================
-      # Only values that are constants belong here. Anything that must READ an
-      # existing value (LD_LIBRARY_PATH), UNSET something (SOURCE_DATE_EPOCH) or
-      # touch the work tree goes in the shellHook further down.
-      #
-      # This attrset is applied to BOTH surfaces -- the dev shell and every
-      # `nix run` wrapper -- so a command cannot behave differently depending on
-      # how it was invoked.
+      # Constants only, applied identically to the dev shell and to every wrapper.
       envVars = pkgs: {
-        # The scripts/ directory has cpython-38 .pyc files committed into it from
-        # the ROS Noetic days. Writing 3.13 ones beside them just dirties the
-        # tree, and a dirty tree makes every nix call print "Git tree is dirty".
+        # scripts/__pycache__ holds five cpython-38 .pyc files that are TRACKED in
+        # git. Running anything under this shell's 3.13 would drop cpython-313
+        # files beside them. Those new files would not show up in `git status`
+        # (.gitignore line 18 is `__pycache__/`, and `nix flake metadata` still
+        # reports the tree clean with one present -- measured), so this is
+        # tidiness rather than a dirty-tree fix.
         PYTHONDONTWRITEBYTECODE = "1";
-        PIP_DISABLE_PIP_VERSION_CHECK = "1";
 
-        # Part of the anchoring invariant (see rootPreamble), not a performance
-        # knob. ruff puts its cache in a `.ruff_cache` next to the *process's
-        # cwd*, not next to the files it was handed, so `nix run
-        # /path/to/repo#lint` from somebody else's directory littered a cache
-        # directory there -- a write outside this repo, which is exactly what the
-        # anchoring fix is meant to make impossible. It also makes ruff usable at
-        # all when the repo root is this flake's read-only copy in the store: with
-        # a cache it dies with "Failed to initialize cache ... Read-only file
-        # system" before reporting a single finding. Note the value: ruff parses
-        # this as a bool and rejects "1" with "invalid value '1' for --no-cache".
-        # 30 files reparse in well under a second, so there is nothing to miss.
+        # Part of the anchoring invariant, not a performance knob. Measured with
+        # ruff 0.16.2: `ruff check sub/a.py` writes its `.ruff_cache` beside the
+        # PROCESS's cwd, not beside the file it was handed, so a verb run from
+        # somebody else's directory littered a cache there -- a write outside this
+        # repo. And when the cwd is not writable (which $REPO_ROOT is not, when it
+        # falls back to this flake's store snapshot) ruff aborts before reporting a
+        # single finding -- measured in the snapshot: "error: Failed to initialize
+        # cache at /nix/store/...-source/.ruff_cache: Read-only file system (os
+        # error 30)".
+        #
+        # Note the value: ruff parses this as a bool and rejects "1" with
+        # "error: invalid value '1' for '--no-cache'". Nothing is lost by disabling
+        # it -- a cold `ruff check .` over this repo's 22 files measured 0.017 s
+        # wall.
         RUFF_NO_CACHE = "true";
       };
 
       # ======================================================================
       # PER-REPO BLOCK 4 -- the command map
       # ======================================================================
-      # THE single source of truth. It generates `apps` (so `nix run .#lint`
+      # THE single source of truth: it generates `apps` (so `nix run .#lint`
       # works), the `dev-*` wrappers on PATH inside the shell, and `dev-help`.
-      # Nothing is written twice, so `nix flake show` can never disagree with
-      # what `dev-lint` actually runs.
+      # Nothing is written twice, so `nix flake show` can never disagree with what
+      # `dev-lint` actually runs.
       #
-      # The house vocabulary is setup/build/test/lint/fmt/run and a verb the repo
+      # The house vocabulary is setup/build/test/lint/fmt/run, and a verb the repo
       # has no meaning for is OMITTED rather than stubbed, because absence is
       # information. Missing here, and why:
       #   setup  nothing to install -- the interpreter above is complete offline
-      #   build  the only buildable artifact is the catkin package, and that
-      #          needs ROS 1 Noetic (GAP 1). `catkin_make` cannot run in here.
-      #   test   there is no test suite in this repo. Not one test file, no CI
-      #          workflow, and CMakeLists.txt leaves catkin_add_nosetests
-      #          commented out. A `test` verb here would be a lie.
+      #   build  the only buildable artifact is the catkin package, and that needs
+      #          ROS 1 (GAP 1). `catkin_make` cannot run in here.
+      #   test   there is no test suite. No test runner is configured anywhere, no
+      #          CI workflow exists, and CMakeLists.txt line 209 leaves
+      #          `# catkin_add_nosetests(test)` commented out. (Three files under
+      #          to_be_deleted/ carry "test" in the name -- image_stitching_test.py,
+      #          image_test.py, writing_image_test.py -- but they are scratch
+      #          scripts, not tests.) A `test` verb would be a lie.
       #
-      # `text` is bash under `set -euo pipefail`, shellcheck'd at BUILD time, and
-      # every verb is ANCHORED: by the time `text` runs, the process cwd IS
-      # $REPO_ROOT (see rootPreamble and anchorPreamble), so a tool's own "no path
-      # given, use the current directory" default already means "this repo". That
-      # is why a bare "$@" below is correct rather than the bug it used to be.
-      # Relative paths the caller passed have been made absolute before the cd,
-      # so `dev-lint ./one_file.py` still means the file they typed.
-      #
-      # Set `mutates = true` on any verb that WRITES; that is what gets it the
-      # mutableGuard below.
+      # `text` is bash under `set -euo pipefail`, shellcheck'd at BUILD time. Each
+      # text below `cd "$REPO_ROOT"` first, which is what makes a tool's own "no
+      # path given, use the current directory" default mean THIS repo rather than
+      # the caller's directory. The consequence to know: a relative path argument
+      # is then resolved against the repo root, not against where you typed it.
+      # Absolute paths and flags are unaffected.
       commands = pkgs: {
         lint = {
-          # Heads up for the next agent: this repo does NOT currently pass. The
-          # scripts are 2022-era lab code and ruff's default rule set (E4/E7/E9/F)
-          # flags bare `except:` (E722), star imports (F403/F405) and unused
-          # imports throughout. That non-zero exit is the honest state of the
-          # tree, not a broken flake -- do not chase it by weakening the verb.
-          description = "ruff check (fails today -- pre-existing issues, see flake comment)";
-          # This exact text used to be a gate that lied. `ruff check` with no path
-          # argument lints the process's cwd, and the cwd was the caller's: from an
-          # unrelated directory `nix run /path/to/repo#lint` printed "All checks
-          # passed!" and exited 0 on a tree with 137 findings, while the same flake
-          # from inside the repo exited 1. The flake-URL form is what CI and a cold
-          # agent use, so the green one was the one being believed. The text is
-          # unchanged and now correct, because anchorPreamble moved the cwd first.
-          # Do not "improve" it into `ruff check .`: that is not wrong today, but
-          # it hides where the anchoring comes from and reads as if this verb were
-          # cwd-relative again.
-          text = ''ruff check "$@"'';
+          # Measured today with the pinned ruff 0.16.2: 137 findings across 23 rule
+          # codes, led by I001 (20), UP032 (17), BLE001 (16), E722 (11), F841 (9)
+          # and F401 (9), spread over all 22 tracked .py files. That non-zero exit
+          # is the honest state of 2022-era lab code, not a broken flake -- do not
+          # chase it by weakening the verb.
+          #
+          # Note for anyone reading an older copy of this comment: the enabled rule
+          # set is NOT E4/E7/E9/F. `ruff check --show-settings` on this pin lists a
+          # far wider default selection (I, UP, BLE, TRY, SIM, S, RUF, PIE, PL ...)
+          # with preview disabled and no config file anywhere above this directory.
+          description = "ruff check the whole repo (exits non-zero today: pre-existing findings)";
+          text = ''
+            cd "$REPO_ROOT"
+            ruff check "$@"
+          '';
         };
         fmt = {
-          description = "ruff format (rewrites files)";
-          # Same anchoring, and here it was the dangerous half rather than the
-          # embarrassing one: `ruff format` is mutating, so run from elsewhere this
-          # rewrote the caller's files. Reproduced on a scratch directory before
-          # the fix, and it is now the thing checks.anchoring pins down.
-          mutates = true;
-          text = ''ruff format "$@"'';
+          description = "ruff format the whole repo (rewrites files)";
+          # Mutating, so it refuses rather than guessing when $REPO_ROOT fell back
+          # to the read-only store snapshot. Without the guard `ruff format` walks
+          # the whole tree first and then emits, measured against that snapshot,
+          # one line per file -- "error: Failed to write <path>: Read-only file
+          # system (os error 30)", 22 of them -- to convey the single fact the
+          # guard states once.
+          text = ''
+            need_writable_checkout
+            cd "$REPO_ROOT"
+            ruff format "$@"
+          '';
         };
         run = {
-          # A bare `python3` is correct here and is NOT the mistake the house
-          # style warns about: that warning is about repos whose deps live in a
-          # .venv, where the wrappers' PATH prepend would shadow it with the store
-          # interpreter. Here the store interpreter IS the one carrying cv2 and
-          # numpy, so the prepend is doing the right thing. There is no .venv.
+          # A bare `python3` is correct here: the store interpreter on PATH is the
+          # one carrying cv2 and numpy, and there is no .venv for it to shadow.
           #
-          # Absolute script path, not a relative one, so this behaves the same
-          # from any directory -- which only became true once $REPO_ROOT stopped
-          # meaning "the caller's cwd" (see rootPreamble); before that, this verb
-          # died with "can't open file '<caller's cwd>/catkin_ws/...'". Python
-          # puts the script's own directory on sys.path[0], which is what makes
-          # its `import image_join` resolve.
+          # Read-only with respect to the tree: camera_test_no_ROS.py contains no
+          # `imwrite` and no `open(`, and PYTHONDONTWRITEBYTECODE keeps CPython
+          # from dropping .pyc files beside it. So no need_writable_checkout here.
           #
-          # No `mutates` flag: the script writes nothing (no imwrite, no open())
-          # and PYTHONDONTWRITEBYTECODE keeps CPython from dropping .pyc files
-          # next to it, so it is read-only with respect to the tree.
-          #
-          # Verified reaching the repo's own code and then failing on the repo's
-          # own bug: camera_test_no_ROS.py calls
+          # Verified to reach the repo's own code and then fail on the repo's own
+          # bug: line 11 calls
           # `ImageJoinFactory.create_instance(joinType=2, ...)` with keywords, but
-          # image_join.py declares `create_instance(dict)` taking one positional
-          # dict, so it dies with "unexpected keyword argument 'joinType'". That
-          # is a pre-existing defect in this archived repo, not a toolchain
-          # problem -- it fails fast rather than hanging, which is what matters
+          # image_join.py line 40 declares `create_instance(dict)` taking one
+          # positional dict, so it dies with
+          #   TypeError: ImageJoinFactory.create_instance() got an unexpected
+          #   keyword argument 'joinType'
+          # That the traceback gets that far also proves the script's own directory
+          # landed on sys.path[0], which is what makes its `import image_join`
+          # resolve. Pre-existing defect in a deprecated repo, not a toolchain
+          # problem -- and it fails fast rather than hanging, which is what matters
           # for an unattended agent.
           description = "start the non-ROS two-camera join demo (needs 2 USB cameras + a display; hits a pre-existing repo bug, see flake comment)";
-          text = ''python3 "$REPO_ROOT/catkin_ws/src/camera_tests/scripts/camera_test_no_ROS.py" "$@"'';
+          text = ''
+            cd "$REPO_ROOT"
+            python3 "$REPO_ROOT/catkin_ws/src/camera_tests/scripts/camera_test_no_ROS.py" "$@"
+          '';
         };
       };
 
       # ======================================================================
-      # GENERIC MACHINERY -- byte-identical in all 41 repos, do not edit
+      # PER-REPO BLOCK 6 -- checks beyond the canonical two
       # ======================================================================
-      # The anchoring below (sourceEntries / rootPreamble / anchorPreamble /
-      # mutableGuard) belongs to that shared machinery and carries no knowledge of
-      # this repo, so it stays copyable verbatim. It replaces a cwd-relative
-      # version that was wrong in every copy, not just this one -- so if you find
-      # a sibling repo still running the old two-line rootPreamble, it has the bug
-      # described there and this is the patch for it.
+      extraChecks = pkgs: {
+        # The cheap real check available in a repo with no test suite: import the
+        # modules the scripts actually need. It would catch a nixpkgs bump that
+        # drops cv2's python bindings or moves tkinter out of the interpreter.
+        # tkinter is imported without instantiating Tk. Measured with DISPLAY
+        # unset, `tkinter.Tk()` raises "_tkinter.TclError: no display name and no
+        # $DISPLAY environment variable" -- a build sandbox has no display, so
+        # calling it here would fail for a reason unrelated to the toolchain.
+        pythonImports = pkgs.runCommand "python-imports-check" { nativeBuildInputs = toolchain pkgs; } ''
+          set -euo pipefail
+          python3 -c 'import cv2, numpy, scipy, serial, tkinter, yaml; print(cv2.__version__)'
+          touch "$out"
+        '';
+
+        # The canonical `anchoring` check proves rootPreamble and guardPreamble
+        # behave. This one proves THIS repo's verbs actually use them.
+        verbAnchoring =
+          pkgs.runCommand "verb-anchoring-check" { nativeBuildInputs = lib.attrValues (wrappers pkgs); }
+            ''
+              set -euo pipefail
+
+              # A decoy carrying what a naive anchor would accept for a python
+              # repo, plus one filename this repo does not contain.
+              mkdir decoy
+              cd decoy
+              printf 'import os\nx  =1\n' > sibling_only.py
+              printf 'opencv-python\n' > requirements.txt
+              printf '{\n  description = "a different repo";\n  outputs = _: { };\n}\n' > flake.nix
+              cp -r . ../decoy.orig
+
+              # Grep by NAME, not by directory: a wrongly anchored ruff is also
+              # STANDING in the decoy and prints bare relative paths, so a grep
+              # for "decoy" would match nothing and the leak would sail through.
+              dev-lint > lint.log 2>&1 || true
+              if grep -q sibling_only lint.log; then
+                echo "dev-lint graded the decoy" >&2
+                cat lint.log >&2
+                exit 1
+              fi
+              # ...and it must have graded SOMETHING: a verb that read nothing at
+              # all also passes the test above. This path exists only in this repo.
+              if ! grep -q 'catkin_ws/src/camera_tests/scripts/image_join.py' lint.log; then
+                echo "dev-lint graded neither the decoy nor this repo" >&2
+                cat lint.log >&2
+                exit 1
+              fi
+              # Exit codes are deliberately not asserted: dev-lint is non-zero only
+              # because the findings are real, and would flip to zero the day
+              # somebody fixes them.
+
+              # Refusal, not silence, and not a reformat of somebody else's tree.
+              if dev-fmt > fmt.log 2>&1; then
+                echo "dev-fmt succeeded in a foreign tree; it must refuse" >&2
+                exit 1
+              fi
+
+              # `*.log`, and every log file must match it -- a file named plainly
+              # `log` is not excluded by `--exclude='*.log'` and fails this diff.
+              diff -r --exclude='*.log' . ../decoy.orig
+              touch "$out"
+            '';
+      };
+
+      # >>>>> BEGIN CANONICAL MACHINERY v1 <<<<<
+      # ======================================================================
+      # Everything from the BEGIN sentinel above to the END sentinel on the last
+      # line of this file is fleet-canonical text: the same bytes in every repo
+      # that carries this flake style. That is a checkable claim, not a boast --
+      #
+      #   sed -n '/BEGIN CANONICAL MACHINERY v1/,$p' flake.nix | sha256sum
+      #
+      # prints the same digest in every repo, or one of them has been edited.
+      # (`,$p`, not a range ending on the END sentinel: a range whose closing
+      # pattern were spelled out here would terminate on this very comment.)
+      # Nothing here names a repository, a language, a tool or a project file.
+      # If you find such a name below, it is contamination: the fix is to move
+      # it into the per-repo section above, never to special-case it here.
+      #
+      # This region READS exactly these names from the per-repo section:
+      #   nixpkgs  self  lib  repoName  toolchain  nativeLibs  envVars
+      #   commands  extraChecks
+      # and DEFINES exactly these:
+      #   systems  forAllSystems  ldPreamble  rootPreamble  guardPreamble
+      #   wrappers  helpFor  anchorCheck
+      # plus the four flake outputs apps / devShells / checks / formatter.
+      # Anything else in scope is invisible to it. The types of those eight
+      # inputs, and the shell variables this region exports into command texts,
+      # are specified in INTERFACE.md, which travels with this block.
+      #
+      # To change behaviour here you change it in every repo at once and bump
+      # the version in both sentinels. A local edit is a bug by construction:
+      # the digest above stops matching, and -- because rootPreamble anchors on
+      # flake.nix byte-identity -- an edited working tree also stops being
+      # recognised by wrappers built from the previous revision.
+      # ======================================================================
+
+      # ---- systems policy: decided once for the whole fleet ----
+      #
+      # Read this list as "evaluated on three, built on one". That is what was
+      # measured, and it is all it means:
+      #   * `nix flake check --all-systems` passes, so every output attribute
+      #     below EVALUATES on all three systems.
+      #   * only x86_64-linux has ever been BUILT. The machine this was verified
+      #     on has no aarch64 emulation -- no binfmt handler, and `extra-
+      #     platforms` is x86-only -- so aarch64 cannot be built there at all.
+      # It is not a statement that anything works on aarch64. Do not upgrade it
+      # into one in a README.
+      #
+      # Evaluating all three is still worth its seconds, because the failure it
+      # catches is an eval-time failure: a `pkgs.<attr>` that exists on Linux
+      # and not on darwin (`stdenv.cc.cc.lib` is the usual one) throws during
+      # evaluation, and `nix flake check` without --all-systems checks only the
+      # current system and sails straight past it.
+      #
+      # x86_64-darwin is deliberately absent. nixpkgs 26.11 replaced that whole
+      # attribute set with a `throw`. genAttrs is lazy, so plain `nix develop`
+      # on Linux would not notice -- it detonates later, on the --all-systems
+      # run this policy requires. Add it back only against a separate
+      # nixpkgs-26.05-darwin input.
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
+
+      # Stand-in for flake-utils.lib.eachDefaultSystem. Passes `pkgs` rather
+      # than a system string, because that is what every call site wants, and
+      # keeps the system list in this file rather than in a second input's
+      # hardcoded copy of it.
+      forAllSystems = f: lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
 
       # Prepend, never assign: a host LD_LIBRARY_PATH may be carrying something
       # the user needs, and clobbering it breaks binaries they launch from here.
       # Linux only -- on darwin the loader variable is DYLD_*, and exporting a
       # Linux-shaped value there is at best useless.
+      #
+      # `&&` short-circuits in Nix, so on darwin `nativeLibs pkgs` is never
+      # forced. That is load-bearing for the systems policy above: it is what
+      # lets a repo list Linux-only attrs in nativeLibs and still evaluate on
+      # aarch64-darwin. Do not reorder the two operands.
       ldPreamble =
         pkgs:
         lib.optionalString (pkgs.stdenv.hostPlatform.isLinux && nativeLibs pkgs != [ ]) ''
           export LD_LIBRARY_PATH="${lib.makeLibraryPath (nativeLibs pkgs)}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
         '';
 
-      # Every command gets $REPO_ROOT, and every verb in the map above is aimed at
-      # it. This is the anchoring invariant -- a verb behaves the same from any
-      # cwd and touches nothing outside this repo -- and it is worth spelling out
-      # at length, because the obvious implementation, which is what this file
-      # shipped with, is wrong:
+      # Every command gets $SRC_ROOT and $REPO_ROOT. `nix run` and `nix develop`
+      # both start in whatever directory they were invoked from, and no verb may
+      # act on that directory -- these two are what it acts on instead.
       #
-      #   REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+      # $SRC_ROOT is this flake's own source, snapshotted into the store when
+      # the flake was evaluated. It is the one anchor that is always available:
+      # `nix run /path/to/repo#lint` tells the running program nothing whatever
+      # about /path/to/repo (flake refs are location-independent by design, and
+      # there is no $FLAKE_DIR to read), so without `self` a wrapper invoked
+      # that way has literally no way to name the repo it belongs to. Two
+      # limitations worth knowing: it is read-only, being a store path, and in a
+      # git checkout it contains only TRACKED files.
       #
-      # `nix run` and `nix develop` both start in whatever directory the caller
-      # was standing in, and nix does NOT tell the wrapper which path the flake
-      # was loaded from -- it only gives it a read-only copy of the source in the
-      # store. So invoke a verb as `nix run /path/to/repo#lint` from an unrelated
-      # directory, which is precisely what CI and a cold agent do, and BOTH
-      # branches above answer with the CALLER's directory. Measured, not
-      # hypothetical: lint printed "All checks passed!" and exited 0 on a tree
-      # with 137 real findings, `dev-fmt` reformatted files in the caller's
-      # directory, and `dev-run` looked for catkin_ws under it.
+      # $REPO_ROOT is the writable checkout when the caller is standing in one,
+      # and $SRC_ROOT when they are not. Three things this deliberately is NOT:
       #
-      # Two candidates, in order:
-      #   1. the git work tree we are standing in -- but only if it really is a
-      #      checkout of THIS repo, which is what the sourceEntries loop settles.
-      #      This is the branch that matters locally: it is what lets `dev-fmt`
-      #      rewrite the files an agent is editing, uncommitted ones included.
-      #   2. `self`, this flake's own source in the store. Correct from anywhere
-      #      on the filesystem, and read-only, so a writing verb refuses (see
-      #      mutableGuard) rather than guessing at a target.
-      # Only `git` is used, no coreutils, so this survives a stripped PATH.
+      #   * NOT `pwd`. A fallback to the caller's directory is how `fmt`
+      #     rewrites a stranger's source tree and how `lint` prints "all checks
+      #     passed" having read none of this repo.
+      #   * NOT `git rev-parse --show-toplevel`. Run from inside some OTHER git
+      #     repo it cheerfully answers with THAT repo's top level. It also needs
+      #     git on PATH and a .git directory, so it fails on an export and in
+      #     any wrapper whose toolchain omits git.
+      #   * NOT an inherited $REPO_ROOT from the environment. The dev shell
+      #     EXPORTS this variable, so honouring it would mean that running
+      #     `nix run /path/to/B#fmt` from inside repo A's dev shell points B's
+      #     formatter at A. An explicit path argument is how a caller overrides
+      #     a verb's target; an ambient variable is how they do it by accident.
       #
-      # The cost of baking `self` in, stated so the next agent is not surprised:
-      # the wrappers now reference the source, so editing any tracked file makes
-      # the next `nix develop` rebuild four ~1 kB shell scripts. That is the
-      # price of a verb that cannot be aimed at the wrong tree.
-      sourceEntries = lib.attrNames (builtins.readDir self.outPath);
-
+      # Instead: walk up from $PWD and take the first ancestor that IS this
+      # repo, proved by carrying a byte-identical flake.nix. A single tracked
+      # filename, a marker directory, or a set of them is not proof -- sibling
+      # repos in a fleet share those, and a decoy can be built to carry any list
+      # of names you care to publish. The whole flake.nix is what distinguishes
+      # repos, because description, toolchain and command map all differ, so the
+      # whole flake.nix is what gets compared. Compared with bash's own
+      # `$(<file)` rather than cmp or sha256sum, so the check depends on no
+      # package at all -- pure builtins, correct even in a wrapper whose PATH
+      # carries nothing but the repo's own toolchain.
+      #
+      # Consequence worth knowing: edit flake.nix and the dev-* wrappers in an
+      # already-open `nix develop` stop recognising the tree, because they were
+      # built from the previous flake.nix. That is a stale shell telling you so
+      # -- re-enter it. `nix run` re-evaluates every time and never sees this.
       rootPreamble = ''
-        REPO_ROOT="${self}"
-        if _candidate="$(git rev-parse --show-toplevel 2>/dev/null)"; then
-          # Every top-level name of the flake source must be present before we
-          # trust a work tree. Some other repo, or a bare directory that happens
-          # to sit inside one, fails on the first missing entry and we fall back
-          # to the store copy -- which is the whole point, because that is the
-          # case where writing would land outside this repo.
-          for _entry in ${lib.escapeShellArgs sourceEntries}; do
-            if [ ! -e "$_candidate/$_entry" ]; then
-              _candidate=""
-              break
+        SRC_ROOT=${lib.escapeShellArg "${self}"}
+        export SRC_ROOT
+
+        _dev_find_root() {
+          local dir ref
+          ref=$(<"$SRC_ROOT/flake.nix") || return 1
+          dir=$(
+            unset CDPATH
+            cd -P -- "''${1:-.}" 2>/dev/null && pwd
+          ) || return 1
+          while [ -n "$dir" ]; do
+            if [ -f "$dir/flake.nix" ] && [ "$(<"$dir/flake.nix")" = "$ref" ]; then
+              printf '%s\n' "$dir"
+              return 0
             fi
+            dir=''${dir%/*}
           done
-          if [ -n "$_candidate" ]; then
-            REPO_ROOT="$_candidate"
-          fi
-        fi
-        unset _candidate _entry
+          return 1
+        }
+
+        REPO_ROOT="$(_dev_find_root "$PWD" || printf '%s\n' "$SRC_ROOT")"
         export REPO_ROOT
       '';
 
-      # The second half of the anchoring invariant, and it goes in the WRAPPERS
-      # ONLY -- never in the shellHook, where a `cd` would drag an interactive
-      # `nix develop` out of the subdirectory the user was working in.
+      # Wrappers only, not the shellHook -- an interactive shell has no business
+      # carrying this function around. Any command text that writes files calls
+      # it first, and it is the reason a mutating verb can fail loudly instead
+      # of falling back to "well, the cwd then".
       #
-      # Why move the cwd at all, when every verb could just be handed
-      # "''${@:-$REPO_ROOT}" instead? Because "the path the tool was handed" is not
-      # the only way a tool reaches the filesystem, and the leftovers prove it:
-      # with an explicit path argument and the cwd left alone, `ruff check` still
-      # dropped a `.ruff_cache` directory into the caller's cwd on every run
-      # (measured on a scratch directory -- see RUFF_NO_CACHE above, which closes
-      # that one). Argument defaulting also silently stops working the moment an
-      # invocation is flags-only: "''${@:-$REPO_ROOT}" expands to just `--fix` for
-      # `dev-lint --fix`, and ruff then falls back to... the cwd, mutating it.
-      # Moving the cwd fixes the whole class instead of one member of it, and it
-      # makes every tool's own "no path given" default correct by construction.
-      #
-      # The caller's relative paths are made absolute first, so nothing they typed
-      # changes meaning. A flag, an absolute path, or a word that is not an
-      # existing path (a rule code like E722, a flag's value) is forwarded
-      # untouched -- guessing at those is how you break `--select`.
-      anchorPreamble = ''
-        _args=()
-        for _arg in "$@"; do
-          case $_arg in
-            -* | /*) _args+=("$_arg") ;;
-            *)
-              if [ -e "$_arg" ]; then
-                _args+=("$PWD/$_arg")
-              else
-                _args+=("$_arg")
-              fi
-              ;;
-          esac
-        done
-        set -- "''${_args[@]}"
-        unset _args _arg
-        cd "$REPO_ROOT"
-      '';
-
-      # Emitted only for verbs marked `mutates`. Candidate 2 above is the store
-      # copy, which is read-only, and without this `ruff format` walks the whole
-      # tree emitting one "Read-only file system (os error 30)" per file before
-      # exiting 2 -- forty lines to convey one fact. Say the fact once, and say
-      # what to do about it. Refusing is the honest answer here: nix has not told
-      # us where a writable checkout lives, so there is nothing to fall back to.
-      mutableGuard = name: ''
-        if [ ! -w "$REPO_ROOT" ]; then
-          echo "dev-${name} rewrites files, so it needs a checkout it can write to." >&2
-          echo "The repo root resolved to this flake's read-only source in the store:" >&2
-          echo "  $REPO_ROOT" >&2
-          echo "cd into a checkout of this repo and run it there." >&2
+      # The test is $REPO_ROOT != $SRC_ROOT, i.e. "rootPreamble found a real
+      # checkout", not a permission or a store-path-prefix test. Both of those
+      # answer a narrower question: a checkout may be read-only for unrelated
+      # reasons, and a store path is not the only tree we must refuse to write.
+      guardPreamble = ''
+        need_writable_checkout() {
+          if [ "$REPO_ROOT" != "$SRC_ROOT" ]; then
+            return 0
+          fi
+          echo "''${0##*/}: this command rewrites files, so it needs a writable" >&2
+          echo "checkout of this repo -- and standing in $PWD there is none: no" >&2
+          echo "parent directory carries this flake's flake.nix. The only tree in" >&2
+          echo "reach is the read-only store snapshot $SRC_ROOT, and rewriting" >&2
+          echo "$PWD instead is exactly the bug this guard exists to prevent." >&2
+          echo "cd into the repo (or \`nix develop\` it), or pass an explicit path." >&2
           exit 1
-        fi
+        }
       '';
 
       # One derivation per command, reused by both `apps` and the dev shell, so
       # the two can never diverge. `dev-` prefixed because a bare `test` binary
       # earlier on PATH would shadow the POSIX shell builtin and quietly break
       # every script in the repo that uses it.
+      #
+      # writeShellApplication, not writeShellScriptBin: it runs shellcheck at
+      # BUILD time and sets `set -euo pipefail`, so an unquoted $@ or a silently
+      # ignored failure is a `nix flake check` failure rather than a surprise in
+      # front of an agent.
       wrappers =
         pkgs:
         lib.mapAttrs (
@@ -396,18 +503,18 @@
             runtimeInputs = toolchain pkgs;
             runtimeEnv = envVars pkgs;
             meta.description = cmd.description;
-            # Order matters: resolve the root, refuse early if a writing verb has
-            # nowhere writable to aim, then move into the root, then run.
             text = ''
               ${rootPreamble}
-              ${lib.optionalString (cmd.mutates or false) (mutableGuard name)}
-              ${anchorPreamble}
+              ${guardPreamble}
               ${ldPreamble pkgs}
               ${cmd.text}
             '';
           }
         ) (commands pkgs);
 
+      # `dev-help` is generated from the same attrset as everything else, so it
+      # cannot describe a verb that does not exist or miss one that does. No
+      # runtimeInputs: printing the map must work with nothing installed.
       helpFor =
         pkgs:
         let
@@ -426,6 +533,76 @@
             EOF
           '';
         };
+
+      # The regression gate for rootPreamble and guardPreamble, which are the
+      # two pieces of this flake that can silently damage a tree that is not
+      # this repo. It tests the MECHANISM, not any verb, which is precisely what
+      # makes it fleet-generic: it needs to know nothing about what this repo
+      # does, only that the anchor resolves and the guard refuses.
+      #
+      # The decoy is a real directory carrying a real flake.nix that differs.
+      # Marker-file anchors pass a decoy like this -- that is the whole point of
+      # the probe -- and so does any anchor that trusts `pwd`. Probe 2 is the
+      # other half, and without it a guard that refused everything would score a
+      # perfect pass: a tree that IS byte-identical must still be adopted, or
+      # every mutating verb in the repo is dead. Probe 3 pins the subdirectory
+      # case, which is the normal one for an agent working inside a repo.
+      #
+      # A per-repo probe that drives the actual verbs is strictly better and
+      # cannot live here -- it has to know which verb writes and which needs a
+      # network. INTERFACE.md shows how to add one via `extraChecks`.
+      anchorCheck =
+        pkgs:
+        pkgs.runCommand "anchor-check" { } ''
+          set -euo pipefail
+
+          # The two preambles under test, verbatim, in a file the probes source.
+          # A quoted heredoc, so every $ below is the bash the wrappers see.
+          cat > preamble.sh <<'CANONICAL_PREAMBLE_EOF'
+          ${rootPreamble}
+          ${guardPreamble}
+          CANONICAL_PREAMBLE_EOF
+
+          mkdir decoy
+          printf '{\n  description = "a different repo";\n  outputs = _: { };\n}\n' > decoy/flake.nix
+          printf 'do not touch me\n' > decoy/victim.txt
+          cp -r decoy decoy.orig
+
+          # ---- probe 1: a foreign tree must not be adopted ----
+          if ! ( cd decoy && . ../preamble.sh && [ "$REPO_ROOT" = "$SRC_ROOT" ] ); then
+            echo "anchor adopted a directory that is not this repo" >&2
+            exit 1
+          fi
+          # In a subshell: need_writable_checkout ends in `exit`, which would
+          # otherwise take this whole build down instead of failing a condition.
+          if ( cd decoy && . ../preamble.sh && need_writable_checkout ) > guard.log 2>&1; then
+            echo "need_writable_checkout accepted a tree that is not this repo" >&2
+            exit 1
+          fi
+          if ! diff -r decoy decoy.orig; then
+            echo "the probes modified the foreign tree" >&2
+            exit 1
+          fi
+
+          # ---- probe 2: a byte-identical checkout must be adopted ----
+          cp -r ${lib.escapeShellArg "${self}"} checkout
+          chmod -R u+w checkout
+          if ! ( cd checkout && . ../preamble.sh &&
+                 [ "$REPO_ROOT" = "$(pwd -P)" ] && need_writable_checkout ); then
+            echo "anchor refused a byte-identical checkout of this repo" >&2
+            exit 1
+          fi
+
+          # ---- probe 3: from a subdirectory, still the checkout root ----
+          mkdir -p checkout/probe3/deeper
+          if ! ( cd checkout/probe3/deeper && . ../../../preamble.sh &&
+                 [ "$REPO_ROOT" = "$(cd -P ../.. && pwd)" ] ); then
+            echo "anchor did not walk up to the checkout root from a subdirectory" >&2
+            exit 1
+          fi
+
+          touch "$out"
+        '';
     in
     {
       # `nix flake show` -- the discovery entrypoint, and deliberately the whole
@@ -453,8 +630,9 @@
 
           env = envVars pkgs;
 
-          # Some C extensions compile at -O0, where glibc's _FORTIFY_SOURCE
-          # becomes a hard error instead of a warning.
+          # Natively-compiled extension modules are routinely built at -O0,
+          # where glibc's _FORTIFY_SOURCE stops being a warning and becomes a
+          # hard error.
           hardeningDisable = [ "fortify" ];
 
           shellHook = ''
@@ -463,15 +641,20 @@
             # not support timestamps before 1980".
             unset SOURCE_DATE_EPOCH
 
+            # $REPO_ROOT and $SRC_ROOT are exported here as a convenience for
+            # the human at the prompt. Every wrapper re-resolves them from
+            # scratch and none of them reads these, on purpose: a stale value
+            # exported by one repo's shell must never steer another repo's verb.
             ${rootPreamble}
             ${ldPreamble pkgs}
 
             # Nothing networked, nothing stateful and nothing interactive above
-            # this line, and nothing below it either. No venv creation, no
-            # `pip install`. Bootstrapping in the hook makes a cold
-            # `nix develop -c python3 ...` start downloading before it runs
+            # this line, and nothing below it either. No environment
+            # bootstrapping, no dependency installation, no `read`, no
+            # `exec $SHELL`. Bootstrapping in the hook makes a cold
+            # `nix develop -c <anything>` start downloading before it runs
             # anything, on EVERY invocation -- the exact failure an unattended
-            # agent cannot diagnose.
+            # agent cannot diagnose. That is what a `setup` verb is for.
 
             # The banner is interactive-only, and this guard is load-bearing:
             # shellHook output lands on the STDOUT of `nix develop -c <cmd>`, so
@@ -482,108 +665,81 @@
             # both) or $IN_NIX_SHELL (set in both). >&2 is the second layer, for
             # the case where a caller runs us on a pty.
             case $- in
-              *i*) echo "ir_racecar dev shell -- 'dev-help' for the command map" >&2 ;;
+              *i*) echo "${repoName} dev shell -- 'dev-help' for the command map" >&2 ;;
             esac
           '';
         };
       });
 
-      # `nix flake check` -- honest by construction. It realises the toolchain
-      # closure (so a typo'd or currently-broken attr fails here) and builds
-      # every wrapper, which runs shellcheck over every command text. It also
-      # imports the modules this repo actually needs, which is the cheap real
-      # check available in a repo with no test suite: it would catch a nixpkgs
-      # bump that drops cv2's python bindings or moves tkinter. The second check
-      # pins down the anchoring invariant, which is the one property of this file
-      # that broke in practice. NEVER add a check that always passes: an agent
-      # reads "all checks passed!" as a signal.
-      checks = forAllSystems (pkgs: {
-        toolchain =
-          pkgs.runCommand "toolchain-check"
-            {
-              nativeBuildInputs = toolchain pkgs ++ lib.attrValues (wrappers pkgs);
-            }
-            ''
-              for verb in ${lib.escapeShellArgs (lib.attrNames (commands pkgs))}; do
-                command -v "dev-$verb" > /dev/null || {
-                  echo "dev-$verb is not on PATH" >&2
-                  exit 1
+      # `nix flake check` -- honest by construction, and the only gate this
+      # style has. `toolchain` realises the whole toolchain closure (so a typo'd
+      # or currently-broken attr fails here, not halfway through a task) and
+      # builds every wrapper, which runs shellcheck over every command text.
+      # `anchoring` is the regression test described above.
+      #
+      # Repo-specific checks go in `extraChecks`, never here. They may not
+      # shadow either canonical name: silently replacing `anchoring` with
+      # something weaker is the exact failure this whole file exists to make
+      # impossible, so a collision is an eval error with both names in it.
+      #
+      # NEVER add a check that always passes. An agent reads "all checks
+      # passed!" as a signal, and a fake check makes `nix flake check` a liar.
+      checks = forAllSystems (
+        pkgs:
+        let
+          canonical = {
+            toolchain =
+              pkgs.runCommand "toolchain-check"
+                {
+                  nativeBuildInputs = toolchain pkgs ++ lib.attrValues (wrappers pkgs) ++ [ (helpFor pkgs) ];
                 }
-              done
-              # tkinter is imported without touching Tk itself -- there is no
-              # display in a build sandbox, so `tkinter.Tk()` would fail here for
-              # a reason that has nothing to do with the toolchain.
-              python3 -c 'import cv2, numpy, scipy, serial, tkinter, yaml; print(cv2.__version__)'
-              touch "$out"
-            '';
+                ''
+                  set -euo pipefail
+                  dev-help > help.txt
 
-        # The anchoring regression test, and the reason it is a check rather than
-        # a comment: the bug it covers is invisible from inside the repo, because
-        # there the caller's cwd happens to BE the repo root. A build sandbox is
-        # not a git work tree and has a decoy directory as its cwd, so in here the
-        # wrappers resolve $REPO_ROOT exactly the way a cold
-        # `nix run /path/to/repo#fmt` from somebody else's directory does.
-        #
-        # The lint assertions are phrased as negatives on purpose, so they keep
-        # their meaning if this repo ever reaches zero findings: a correctly
-        # anchored `ruff check` prints neither a decoy path nor the "No Python
-        # files found" warning, whereas the broken version printed one or the other
-        # depending on whether the caller's directory happened to contain python.
-        anchoring =
-          pkgs.runCommand "anchoring-check"
-            {
-              nativeBuildInputs = lib.attrValues (wrappers pkgs);
-            }
-            ''
-              # Logs stay OUTSIDE the decoy directory, because the last assertion
-              # is that the decoy directory is still exactly as we left it.
-              mkdir decoy
-              printf 'import os,sys\nx=1\n' > decoy/decoy.py
-              cp decoy/decoy.py expected.py
+                  # A while-read over a heredoc rather than `for x in <list>`,
+                  # which is a bash syntax error when the list is empty -- and a
+                  # repo with no verbs yet is a legitimate state.
+                  while IFS= read -r verb; do
+                    [ -n "$verb" ] || continue
+                    command -v "dev-$verb" > /dev/null || {
+                      echo "dev-$verb is not on PATH" >&2
+                      exit 1
+                    }
+                    grep -q -- "dev-$verb" help.txt || {
+                      echo "dev-$verb is missing from the dev-help map" >&2
+                      exit 1
+                    }
+                  done <<'CANONICAL_VERBS_EOF'
+                  ${lib.concatStringsSep "\n" (lib.attrNames (commands pkgs))}
+                  CANONICAL_VERBS_EOF
 
-              cd decoy
-              # A mutating verb with no writable checkout must refuse, not
-              # reformat whatever it happens to be standing in.
-              if dev-fmt > ../fmt.log 2>&1; then
-                echo "dev-fmt exited 0 outside a work tree; it must refuse" >&2
-                exit 1
-              fi
-              # `|| true` because the repo has pre-existing findings, so a
-              # correctly anchored dev-lint exits non-zero in here.
-              dev-lint > ../lint.log 2>&1 || true
-              cd ..
+                  touch "$out"
+                '';
+            anchoring = anchorCheck pkgs;
+          };
+          extra = extraChecks pkgs;
+          clash = lib.intersectLists (lib.attrNames canonical) (lib.attrNames extra);
+        in
+        if clash != [ ] then
+          throw "extraChecks must not redefine canonical checks: ${lib.concatStringsSep ", " clash}"
+        else
+          canonical // extra
+      );
 
-              if ! cmp -s decoy/decoy.py expected.py; then
-                echo "a verb rewrote a file outside the repo" >&2
-                cat fmt.log >&2
-                exit 1
-              fi
-              # Not just "unmodified" -- untouched. This is the assertion that
-              # catches a stray cache or lockfile, which is how ruff's .ruff_cache
-              # was found landing in the caller's directory even after the paths
-              # handed to it were correct.
-              if [ "$(ls -A decoy)" != "decoy.py" ]; then
-                echo "a verb created files in the caller's directory:" >&2
-                ls -A decoy >&2
-                exit 1
-              fi
-              if grep -q 'decoy\.py' lint.log; then
-                echo "dev-lint inspected the caller's directory" >&2
-                exit 1
-              fi
-              if grep -qi 'no python files found' lint.log; then
-                echo "dev-lint inspected an empty cwd instead of the repo" >&2
-                exit 1
-              fi
-              touch "$out"
-            '';
-      });
-
-      # `nix fmt` -- formats the *Nix* in this repo; project code is `dev-fmt`.
-      # nixfmt-tree (the treefmt wrapper) rather than bare nixfmt, because bare
-      # nixfmt tries to parse every path handed to it and fails on non-Nix files.
-      # This file ships already formatted, so `nix fmt` is a no-op rather than a
-      # diff.
+      # `nix fmt` -- formats the *Nix* in this repo; project code gets a `fmt`
+      # verb. nixfmt-tree (the treefmt wrapper) rather than bare nixfmt, because
+      # bare nixfmt tries to parse every path handed to it and fails on non-Nix
+      # files. This file ships already formatted, so `nix fmt` is a no-op rather
+      # than a diff across the fleet.
+      #
+      # This is the one verb here NOT anchored to $REPO_ROOT, and it cannot be:
+      # `nix fmt` is nix's own verb, and nix -- not this flake -- decides which
+      # paths the formatter receives, passing the cwd when the user names none.
+      # A wrapper that overrode them would break `nix fmt path/to/one/file.nix`,
+      # and it cannot tell that "." apart from the default. So `nix fmt` formats
+      # where you stand, by design; the `fmt` verb is the anchored one.
       formatter = forAllSystems (pkgs: pkgs.nixfmt-tree);
     };
 }
+# >>>>> END CANONICAL MACHINERY v1 <<<<<
